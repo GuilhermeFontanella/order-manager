@@ -3,11 +3,10 @@ import { useCart } from '../context/CartContext'
 import { fmt } from '../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react';
-import { div } from 'framer-motion/m';
 import { Minus, Plus, Trash, X } from 'lucide-react';
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { items, remove, clear, updateQty } = useCart();
+  const { items, remove, updateQty } = useCart();
   const [qty, setQty] = useState(1)
   const total = items.reduce((s, it) => s + it.item.preco * it.qty, 0)
   const navigate = useNavigate()

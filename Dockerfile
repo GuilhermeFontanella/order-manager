@@ -1,3 +1,10 @@
+FROM node:18-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci || npm install
+COPY . .
+RUN npm run build
+
 FROM pierrezemb/gostatic
-COPY . /srv/http/
+COPY --from=build /app/dist /srv/http/
 CMD ["-port","8080","-https-promote", "-enable-logging"]
