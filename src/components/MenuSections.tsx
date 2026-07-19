@@ -52,7 +52,7 @@ export default function MenuSections({ search = '' }: Props) {
         {filteredMenu.map((cat, idx) => (
           <button
             key={cat.id}
-            className={`tab px-3 py-2 rounded-full text-sm ${idx === 0 ? 'active' : ''}`}
+            className={`cursor-pointer inline-flex items-center rounded-4xl bg-amber-50 px-2 py-2 text-xs font-medium text-gray-600 inset-ring inset-ring-gray-500/10 hover:bg-gray-200 ${idx === 0 ? 'active' : ''} shadow-sm`}
             data-cat={cat.id}
             onClick={() => document.getElementById('sec-' + cat.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           >
@@ -68,9 +68,9 @@ export default function MenuSections({ search = '' }: Props) {
           </div>
         ) : (
           filteredMenu.map((cat: Category) => (
-            <section id={'sec-' + cat.id} key={cat.id} className="mb-6" aria-labelledby={`title-${cat.id}`}>
-              <h2 id={`title-${cat.id}`} className="font-bold text-lg mb-3">{cat.nome}</h2>
-              <div className="grid gap-3">
+            <section id={'sec-' + cat.id} key={cat.id} className="mb-6 mt-6" aria-labelledby={`title-${cat.id}`}>
+              <h2 id={`title-${cat.id}`} className="font-bold text-lg mb-4 text-left">{cat.nome}</h2>
+              <div className="grid gap-3 mt-4">
                 {cat.itens.map(item => (
                   <ProductCard key={item.id} item={item} onAdd={() => setSelected(item)} />
                 ))}

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { MoreVertical, Search } from 'lucide-react'
+import { MoreVertical, Search, Utensils } from 'lucide-react'
 import { useParams, useNavigate } from 'react-router-dom'
 import MenuSections from '../../components/MenuSections'
 import CartBar from '../../components/CartBar'
 import CartDrawer from '../../components/CartDrawer'
+import bgMenu from '../../assets/bgmenu.webp'
 
 export default function OrderMenu() {
   const params = useParams() as { tableId?: string }
@@ -55,36 +56,42 @@ export default function OrderMenu() {
   const [cartOpen, setCartOpen] = useState(false)
 
   return (
-    <div className="min-h-screen dark:bg-[#1e293b] bg-[#f5efe1] text-slate-900">
+    <div className="relative isolate min-h-screen overflow-hidden dark:bg-[#1e293b] bg-[#f5efe1] text-slate-900">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 scale-110 bg-cover bg-center bg-no-repeat blur-xs"
+        style={{ backgroundImage: `url(${bgMenu})` }}
+      />
       <div className="mx-auto max-w-5xl px-4 pb-24">
         <header className="pt-6 pb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-sm">
+              <div className="inline-flex items-center rounded-full bg-green-300 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-md">
                 Restaurante aberto
               </div>
               <div className="justify-items-start">
                 <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900">Botequim do Zé</h1>
-                <p className="mt-1 text-sm text-slate-500">Cardápio digital</p>
               </div>
             </div>
 
             {tableId ? (
-              <div className="relative inline-flex items-center gap-3" ref={menuRef}>
-                <div className="rounded-full dark:text-amber-50 dark:bg-stone-500 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm">
-                  Mesa {tableId}
+              <div className="relative flex justify-between items-center gap-3" ref={menuRef}>
+                <div className=" flex items-center gap-3 rounded-full dark:text-amber-50 dark:bg-stone-500 bg-green-300 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm">
+                  <Utensils />
+                  <span>Mesa {tableId}</span>
+                 
                 </div>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(prev => !prev)}
-                  className="inline-flex dark:border-0 dark:bg-stone-500 h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:text-amber-50  bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
+                  className="inline-flex dark:border-0 dark:bg-stone-500 h-10 w-10 items-center justify-center rounded-full border border-slate-200 dark:text-amber-50  bg-amber-50 text-slate-600 shadow-sm transition hover:bg-slate-50"
                   aria-label="Mais opções"
                 >
                   <MoreVertical className="h-5 w-5" />
                 </button>
 
                 {menuOpen ? (
-                  <div className="absolute right-0 top-full z-10 mt-2 w-56 rounded-3xl border border-slate-200 bg-white p-2 shadow-xl">
+                  <div className="absolute right-0 top-full z-10 mt-0 w-56 rounded-3xl border border-slate-200 bg-white p-2 shadow-xl">
                     <button
                       type="button"
                       onClick={handleRescan}
