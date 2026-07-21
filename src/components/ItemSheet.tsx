@@ -18,7 +18,7 @@ const defaultOpcao = {
 export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
   const [qty, setQty] = useState(1)
   const [obs, setObs] = useState('')
-  const [selectedOption, setSelectedOption] = useState<string | null>(null)
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   const optionGroup = useMemo(() => {
     if (!item) return null
@@ -31,7 +31,7 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
     return null
   }, [item])
 
-  if (!open || !item) return null
+  if (!open || !item) return null;
 
   const isOptionRequired = optionGroup?.obrigatorio === true
   const canAdd = !isOptionRequired || Boolean(selectedOption)
@@ -51,20 +51,22 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
           <div className="h-1.5 w-16 rounded-full bg-slate-200" />
         </div>
 
-        <div className="flex items-start gap-3 rounded-[32px] bg-slate-50 p-4 shadow-sm">
-          <div className="w-16 h-16 rounded-[28px] bg-white border border-slate-200 flex items-center justify-center text-3xl">
-            {item.emoji ?? '🍽️'}
+        <div className="flex flex-col gap-3 rounded-[32px] bg-slate-50 p-4 shadow-sm">
+          <div className="flex gap-4 items-start">
+            <div className="w-16 h-16 rounded-[28px] bg-white border border-slate-200 flex items-center justify-center text-3xl">
+              {item.emoji ?? '🍽️'}
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-lg text-slate-900">{item.nome}</h3>
+              {item.desc && <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.desc}</p>}
+            </div>
+            <div className="font-mono font-semibold text-green-700 text-right">R$ {(item.preco / 100).toFixed(2).replace('.', ',')}</div>
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-lg text-slate-900">{item.nome}</h3>
-            {item.desc && <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.desc}</p>}
-          </div>
-          <div className="font-mono font-semibold text-green-700 text-right">R$ {(item.preco / 100).toFixed(2).replace('.', ',')}</div>
         </div>
 
         {optionGroup ? (
           <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 text-left">
               <div>
                 <p className="text-sm font-semibold text-slate-900">{optionGroup.nome}</p>
                 <p className="text-xs text-slate-500 mt-1">Selecione uma opção para continuar.</p>

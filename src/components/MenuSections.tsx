@@ -4,13 +4,15 @@ import type { Category, Item } from '../data/menu';
 import ProductCard from './ProductCard'
 import ItemSheet from './ItemSheet'
 import { useCart } from '../context/CartContext'
+import DetailsSheet from './DetailsSheet';
 
 type Props = {
   search?: string
 }
 
 export default function MenuSections({ search = '' }: Props) {
-  const tabsRef = useRef<HTMLDivElement | null>(null)
+  const tabsRef = useRef<HTMLDivElement | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     // Highlight active tab on scroll
@@ -72,7 +74,7 @@ export default function MenuSections({ search = '' }: Props) {
               <h2 id={`title-${cat.id}`} className="font-bold text-lg mb-4 text-left">{cat.nome}</h2>
               <div className="grid gap-3 mt-4">
                 {cat.itens.map(item => (
-                  <ProductCard key={item.id} item={item} onAdd={() => setSelected(item)} />
+                  <ProductCard key={item.id} item={item} onAdd={() => setSelected(item)} showDetails={() => {setSelected(item); setShowDetails(!showDetails)}} />
                 ))}
               </div>
             </section>
@@ -81,11 +83,22 @@ export default function MenuSections({ search = '' }: Props) {
       </main>
       <ItemSheet
         item={selected}
-        open={!!selected}
+        open={!!selected && !showDetails}
         onClose={() => setSelected(null)}
         onAdd={(item, qty = 1) => {
           add(item, qty)
           setSelected(null)
+        }}
+      />
+      <DetailsSheet
+        item={selected}
+        open={!!selected && showDetails}
+        onClose={() => {
+          setSelected(null)
+          setShowDetails(false)
+        }}
+        onContinue={() => {
+          setShowDetails(false)
         }}
       />
     </div>

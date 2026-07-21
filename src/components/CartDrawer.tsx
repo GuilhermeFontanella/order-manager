@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext'
 import { fmt } from '../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react';
-import { Minus, Plus, Trash, X } from 'lucide-react';
+import { Minus, Pencil, Plus, Trash, WalletCards, X } from 'lucide-react';
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { items, remove, updateQty } = useCart();
@@ -35,29 +35,30 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
           <div className="space-y-3 max-h-[50vh] overflow-y-auto">
             {items.map(it => (
               <div key={it.id} className="mt-5 flex items-center justify-between gap-4 ">
-                <div className="justify-items-start">
+                <div className="text-left">
                   <div className="font-semibold">{it.item.nome}</div>
-                  <div className="text-xs text-gray-500">{fmt(it.item.preco)}</div>
+                  <div className="text-xs text-gray-500 pt-1">{fmt(it.item.preco)}</div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-3 rounded-full bg-slate-100 px-2 py-2">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-0 rounded-full bg-slate-100 px-1 py-1">
                     <button
                       type="button"
                       onClick={() => {setQty(Math.max(1, qty - 1)); updateQty(it.id, Math.max(1, qty - 1))}}
-                      className="h-10 w-10 justify-items-center rounded-full bg-white text-lg text-slate-700 shadow-sm"
+                      className="h-8 w-8 justify-items-center rounded-full bg-white text-lg text-slate-700 shadow-sm"
                     >
                       <Minus />
                     </button>
-                    <span className="min-w-[34px] text-center text-sm font-semibold text-slate-900">{qty}</span>
+                    <span className="min-w-[34px] text-center text-sm font-semibold text-slate-900">{it.qty}</span>
                     <button
                       type="button"
                       onClick={() => {setQty(qty + 1); updateQty(it.id, qty + 1)}}
-                      className="h-10 w-10 justify-items-center rounded-full bg-white text-lg text-slate-700 shadow-sm"
+                      className="h-8 w-8 justify-items-center rounded-full bg-white text-lg text-slate-700 shadow-sm"
                     >
                       <Plus />
                     </button>
                   </div>
-                  <button onClick={() => remove(it.id)} className="text-sm text-red-600"><Trash /></button>
+                  <button onClick={() => remove(it.id)} className="text-sm text-green-600"><Pencil className="h-5 w-5" /></button>
+                  <button onClick={() => remove(it.id)} className="text-sm text-red-600"><Trash className="h-5 w-5" /></button>
                 </div>
               </div>
             ))}
@@ -70,7 +71,10 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
             <div className="font-bold text-lg">{fmt(total)}</div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => { onClose(); navigate('/checkout') }} className={`px-4 py-2 bg-green-600 text-white rounded-2xl ${total > 0 ? '' : 'opacity-50 cursor-not-allowed'}`}>Enviar Pedido</button>
+            <button onClick={() => { onClose(); navigate('/checkout') }} className={`flex gap-4 px-4 py-2 bg-green-600 text-white rounded-2xl ${total > 0 ? '' : 'opacity-50 cursor-not-allowed'}`}>
+              <WalletCards />
+              Pagamento
+            </button>
           </div>
         </div>
       </motion.aside>

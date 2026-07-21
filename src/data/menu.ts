@@ -6,6 +6,7 @@ export type Item = {
   emoji?: string
   disponivel?: boolean
   grupos?: any[]
+  fotos?: string[]
 }
 
 export type Category = {
@@ -19,7 +20,21 @@ export const MENU: Category[] = [
     id: 'entradas',
     nome: 'Entradas',
     itens: [
-      { id: 'e1', nome: 'Bolinho de queijo', desc: 'Croccante por fora, cremoso por dentro', preco: 1200, emoji: '🧀', disponivel: true, grupos: [] },
+      {
+        id: 'e1',
+        nome: 'Bolinho de queijo',
+        desc: 'Croccante por fora, cremoso por dentro',
+        preco: 1200,
+        emoji: '🧀',
+        disponivel: true,
+        grupos: [],
+        fotos: [
+          'https://picsum.photos/seed/bolinho-1/600/450',
+          'https://picsum.photos/seed/bolinho-2/600/450',
+          'https://picsum.photos/seed/bolinho-3/600/450',
+          'https://picsum.photos/seed/bolinho-4/600/450',
+        ],
+      },
       { id: 'e2', nome: 'Isca de peixe crocante', desc: 'Filé empanado com molho tártaro', preco: 3200, emoji: '🐟', disponivel: true, grupos: [] },
     ]
   },
