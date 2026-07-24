@@ -22,6 +22,7 @@ type Props = {
   onConfirmarDevolucao: (id: number, motivo: string) => void
   onReverterEntrega: (id: number) => void
   horaAbertura: string
+  onAbrirPainelDeChamada: () => void
 }
 
 export default function BalcaoPanel({
@@ -37,6 +38,7 @@ export default function BalcaoPanel({
   onConfirmarDevolucao,
   onReverterEntrega,
   horaAbertura,
+  onAbrirPainelDeChamada,
 }: Props) {
   const [tab, setTab] = useState<'retirada' | 'todos'>('retirada')
 
@@ -64,7 +66,7 @@ export default function BalcaoPanel({
 
         {tab === 'retirada' ? (
           <div>
-            <CallPanel lastCall={lastCall} now={now} flash={callFlash} />
+            <CallPanel lastCall={lastCall} now={now} flash={callFlash} onOpenDisplay={onAbrirPainelDeChamada} />
 
             <div className="counter-section-label">Prontos para retirada</div>
             <PickupGrid

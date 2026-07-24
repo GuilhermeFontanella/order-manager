@@ -8,6 +8,7 @@ import Kitchen from '../pages/kitchen/Kitchen'
 import KitchenNavLink from '../components/kitchen/KitchenNavLink'
 import Counter from '../pages/counter/Counter'
 import CounterNavLink from '../components/counter/CounterNavLink'
+import ReadyOrders from '../pages/ready-orders/ReadyOrders'
 
 function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
   if (!isAuthenticated) {
@@ -58,6 +59,8 @@ export function AppRoutes() {
         <Route path="/scan" element={<ScanQR />} />
 
         <Route path="/checkout" element={<Checkout />} />
+
+        <Route path="/ready-orders" element={<ReadyOrders />} />
 
         <Route
           path="/kitchen"

@@ -8,6 +8,7 @@ import type { LastCall } from '../../components/counter/CallPanel'
 import BalcaoPanel from './BalcaoPanel'
 import DashboardPanel from './DashboardPanel'
 import { useAuth } from '../../context/AuthContext'
+import { writeReadyOrdersSnapshot } from '../../components/counter/readyOrdersSync'
 
 const NOMES = ['Beatriz', 'Thiago', 'Camila', 'Diego', 'Larissa', 'Pedro', 'Fernanda']
 const VALORES_MOCK = [1800, 2500, 3200, 3800, 6200]
@@ -53,9 +54,20 @@ export default function Counter() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    const prontos = orders
+      .filter(o => o.status === 'pronto' && o.prontoEm != null)
+      .map(o => ({ id: o.id, senha: o.senha, nome: o.nome, mesa: o.mesa, prontoEm: o.prontoEm as number }))
+    writeReadyOrdersSnapshot({ prontos, lastCall })
+  }, [orders, lastCall])
+
   function handleLogout() {
     logout()
     navigate('/login', { replace: true })
+  }
+
+  function abrirPainelDeChamada() {
+    window.open('/ready-orders', '_blank', 'noopener,noreferrer')
   }
 
   function toggleAdmin() {
@@ -160,6 +172,7 @@ export default function Counter() {
           onConfirmarDevolucao={confirmarDevolucao}
           onReverterEntrega={reverterEntrega}
           horaAbertura={horaAbertura}
+          onAbrirPainelDeChamada={abrirPainelDeChamada}
         />
       ) : (
         <DashboardPanel orders={orders} restaurantOpen={restaurantOpen} onReabrir={reabrirRestaurante} />
