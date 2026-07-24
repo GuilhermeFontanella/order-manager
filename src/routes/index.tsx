@@ -4,6 +4,10 @@ import Login from '../pages/login/Login'
 import OrderMenu from '../pages/order/OrderMenu'
 import ScanQR from '../pages/scan/ScanQR'
 import Checkout from '../pages/checkout/Checkout'
+import Kitchen from '../pages/kitchen/Kitchen'
+import KitchenNavLink from '../components/kitchen/KitchenNavLink'
+import Counter from '../pages/counter/Counter'
+import CounterNavLink from '../components/counter/CounterNavLink'
 
 function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
   if (!isAuthenticated) {
@@ -12,6 +16,14 @@ function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
 
   if (role === 'admin') {
     return '/dashboard'
+  }
+
+  if (role === 'cozinha') {
+    return '/kitchen'
+  }
+
+  if (role === 'balcao') {
+    return '/counter'
   }
 
   return '/order/table-1'
@@ -48,10 +60,31 @@ export function AppRoutes() {
         <Route path="/checkout" element={<Checkout />} />
 
         <Route
+          path="/kitchen"
+          element={
+            <ProtectedRoute requiredRoles={['cozinha', 'admin']}>
+              <Kitchen />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/counter"
+          element={
+            <ProtectedRoute requiredRoles={['balcao', 'admin']}>
+              <Counter />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <>Dashboard</>
+              <div className="flex flex-wrap gap-4 p-6">
+                <KitchenNavLink />
+                <CounterNavLink />
+              </div>
             </ProtectedRoute>
           }
         />

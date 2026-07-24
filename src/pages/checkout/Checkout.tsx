@@ -21,7 +21,7 @@ function ProgressDots({ active }: { active: 0 | 1 }) {
   )
 }
 
-function CheckoutHeader({ title, active, onClose }: { title: string; active: 0 | 1; onClose: () => void }) {
+function CheckoutHeader({ active, onClose }: { title: string; active: 0 | 1; onClose: () => void }) {
   return (
     <header className="relative flex items-center justify-between px-4 py-4">
       <button

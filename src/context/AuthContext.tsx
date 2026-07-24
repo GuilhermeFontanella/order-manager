@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('authToken', token)
     if (user) {
       localStorage.setItem('user', JSON.stringify(user))
+      if (user.role) localStorage.setItem('userRole', user.role)
       setUser(user)
     }
     setIsAuthenticated(true)
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
+    localStorage.removeItem('userRole')
     setUser(null)
     setIsAuthenticated(false)
   }
