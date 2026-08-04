@@ -1,12 +1,13 @@
-export type CounterOrderStatus = 'fila_preparo' | 'preparando' | 'pronto' | 'entregue' | 'cancelado'
+export type CounterOrderStatus = 'AGUARDANDO_PAGAMENTO' | 'PREPARANDO' | 'PRONTO' | 'RETIRADO' | 'CANCELADO'
 
 export type CounterOrderItem = {
   qty: number
   nome: string
+  produtoId: string
 }
 
 export type CounterOrder = {
-  id: number
+  id: string
   senha: number
   nome: string
   mesa: number
@@ -18,7 +19,6 @@ export type CounterOrder = {
   entregueEm?: number | null
   chamadas?: number
   cooldownUntil?: number | null
-  motivoDevolucao?: string
 }
 
 export type DashboardData = {

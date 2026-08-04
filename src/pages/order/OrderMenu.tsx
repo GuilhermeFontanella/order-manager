@@ -1,32 +1,51 @@
 import { useEffect, useRef, useState } from 'react'
 import { MoreVertical, Search, Utensils } from 'lucide-react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import MenuSections from '../../components/MenuSections'
 import CartBar from '../../components/CartBar'
 import CartDrawer from '../../components/CartDrawer'
 import bgMenu from '../../assets/bgmenu.webp'
+import { readMesaSession, clearMesaSession } from '../../lib/mesaSession'
+import { getMesaCardapio, type Mesa } from '../../services/storefront'
+import type { Category } from '../../data/menu'
 
 export default function OrderMenu() {
-  const params = useParams() as { tableId?: string }
   const navigate = useNavigate()
-  const paramTableId = params.tableId
-  const [tableId, setTableId] = useState<string | null>(null)
+  const [mesa, setMesa] = useState<Mesa | null>(null)
+  const [cardapio, setCardapio] = useState<Category[]>([])
+  const [loading, setLoading] = useState(() => !!readMesaSession())
+  const [error, setError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
   const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (paramTableId) {
-      // Salva automaticamente quando vem na URL (ex.: via QR)
-      localStorage.setItem('tableId', paramTableId)
-      setTableId(paramTableId)
-      return
+    const session = readMesaSession()
+    if (!session) return
+
+    let isMounted = true
+
+    async function loadMesa() {
+      try {
+        const { mesa: mesaData, cardapio: cardapioData } = await getMesaCardapio(session!.tenantSlug, session!.qrCodeToken)
+        if (!isMounted) return
+        setMesa(mesaData)
+        setCardapio(cardapioData)
+      } catch {
+        if (!isMounted) return
+        clearMesaSession()
+        setError('Não foi possível carregar a mesa. Escaneie o QR code novamente.')
+      } finally {
+        if (isMounted) setLoading(false)
+      }
     }
 
-    // Se não houver parâmetro, tenta recuperar do localStorage
-    const stored = localStorage.getItem('tableId')
-    setTableId(stored)
-  }, [paramTableId])
+    loadMesa()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -47,8 +66,9 @@ export default function OrderMenu() {
   }
 
   const handleClear = () => {
-    localStorage.removeItem('tableId')
-    setTableId(null)
+    clearMesaSession()
+    setMesa(null)
+    setCardapio([])
     setMenuOpen(false)
     navigate('/scan')
   }
@@ -74,12 +94,12 @@ export default function OrderMenu() {
               </div>
             </div>
 
-            {tableId ? (
+            {mesa ? (
               <div className="relative flex justify-between items-center gap-3" ref={menuRef}>
                 <div className=" flex items-center gap-3 rounded-full dark:text-amber-50 dark:bg-stone-500 bg-green-300 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm">
                   <Utensils />
-                  <span>Mesa {tableId}</span>
-                 
+                  <span>Mesa {mesa.numero}</span>
+
                 </div>
                 <button
                   type="button"
@@ -109,9 +129,9 @@ export default function OrderMenu() {
                   </div>
                 ) : null}
               </div>
-            ) : (
+            ) : !loading ? (
               <div className="rounded-3xl bg-white px-4 py-3 shadow-sm">
-                <p className="text-sm text-slate-600">Mesa não informada.</p>
+                <p className="text-sm text-slate-600">{error ?? 'Mesa não informada.'}</p>
                 <button
                   onClick={handleRescan}
                   className="mt-2 inline-flex rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
@@ -119,7 +139,7 @@ export default function OrderMenu() {
                   Escanear QR
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="mt-6 max-w-xl">
@@ -139,7 +159,7 @@ export default function OrderMenu() {
           </div>
         </header>
 
-        <MenuSections search={search} />
+        <MenuSections search={search} categories={cardapio} loading={loading} />
       </div>
 
       <CartBar onOpen={() => setCartOpen(true)} />

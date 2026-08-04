@@ -3,11 +3,11 @@ import { elapsedLabel } from './utils'
 import { fmt } from '../../data/menu'
 
 const STATUS_LABEL: Record<string, string> = {
-  fila_preparo: 'Fila de preparo',
-  preparando: 'Preparando',
-  pronto: 'Pronto',
-  entregue: 'Entregue',
-  cancelado: 'Cancelado',
+  AGUARDANDO_PAGAMENTO: 'Aguardando pagamento',
+  PREPARANDO: 'Preparando',
+  PRONTO: 'Pronto',
+  RETIRADO: 'Retirado',
+  CANCELADO: 'Cancelado',
 }
 
 export default function OverviewTable({ orders, now }: { orders: CounterOrder[]; now: number }) {

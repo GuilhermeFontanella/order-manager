@@ -1,23 +1,25 @@
 import { useState } from 'react'
 import { LogOut, Menu, X } from 'lucide-react'
 
+const PAPEL_LABEL: Record<string, string> = {
+  MANAGER: 'Manager',
+  HEAD_CHEF: 'Head chef',
+  KITCHEN: 'Cozinha',
+}
+
 type Props = {
   clock: string
-  adminMode: boolean
-  onToggleAdmin: () => void
+  papel: string | undefined
   restaurantOpen: boolean
   onToggleRestaurantOpen: () => void
-  onSimularNovoPedido: () => void
   onLogout: () => void
 }
 
 export default function KitchenHeader({
   clock,
-  adminMode,
-  onToggleAdmin,
+  papel,
   restaurantOpen,
   onToggleRestaurantOpen,
-  onSimularNovoPedido,
   onLogout,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -64,22 +66,8 @@ export default function KitchenHeader({
             <span>{restaurantOpen ? 'Restaurante aberto' : 'Restaurante fechado'}</span>
           </button>
 
-          {restaurantOpen && (
-            <button type="button" className="kitchen-btn-sim" onClick={onSimularNovoPedido}>
-              + Simular novo pedido
-            </button>
-          )}
-
-          <div
-            className={`kitchen-admin-toggle${adminMode ? ' on' : ''}`}
-            onClick={onToggleAdmin}
-          >
-            <span>Modo admin</span>
-            <div className="kitchen-switch" />
-          </div>
-
-          <span className={`kitchen-role-badge${adminMode ? ' admin' : ''}`}>
-            {adminMode ? 'Cozinha admin' : 'Cozinha'}
+          <span className={`kitchen-role-badge${papel === 'MANAGER' || papel === 'HEAD_CHEF' ? ' admin' : ''}`}>
+            {(papel && PAPEL_LABEL[papel]) ?? 'Cozinha'}
           </span>
 
           <span className="kitchen-clock">{clock}</span>

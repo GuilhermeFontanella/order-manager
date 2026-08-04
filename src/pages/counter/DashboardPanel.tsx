@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { CounterOrder } from '../../components/counter/types'
-import { CATEGORIA_MAP, PRODUTO_INSUMOS, HISTORICO_DIAS } from '../../components/counter/dashboardData'
+import { PRODUTO_INSUMOS, HISTORICO_DIAS } from '../../components/counter/dashboardData'
 import DayNav from '../../components/counter/DayNav'
 import StatsRow from '../../components/counter/StatsRow'
 import BreakdownList from '../../components/counter/BreakdownList'
@@ -10,21 +10,22 @@ import { fmt } from '../../data/menu'
 
 type Props = {
   orders: CounterOrder[]
+  produtoCategorias: Record<string, string>
   restaurantOpen: boolean
   onReabrir: () => void
 }
 
-function computeTodayData(orders: CounterOrder[]) {
-  const validos = orders.filter(o => o.status !== 'cancelado')
+function computeTodayData(orders: CounterOrder[], produtoCategorias: Record<string, string>) {
+  const validos = orders.filter(o => o.status !== 'CANCELADO')
   const faturado = validos.reduce((s, o) => s + o.valor, 0)
   const pedidos = validos.length
-  const categorias: Record<string, number> = { 'Pratos principais': 0, Entradas: 0, Bebidas: 0, Cervejas: 0, Sobremesas: 0 }
+  const categorias: Record<string, number> = {}
   const insumoTotais: Record<string, number> = {}
 
   validos.forEach(o => {
     o.itens.forEach(i => {
-      const cat = CATEGORIA_MAP[i.nome]
-      if (cat) categorias[cat] = (categorias[cat] || 0) + i.qty
+      const cat = produtoCategorias[i.produtoId] ?? 'Outros'
+      categorias[cat] = (categorias[cat] || 0) + i.qty
       const insumos = PRODUTO_INSUMOS[i.nome]
       if (insumos) {
         insumos.forEach(ing => {
@@ -54,10 +55,10 @@ function computeTodayData(orders: CounterOrder[]) {
   }
 }
 
-export default function DashboardPanel({ orders, restaurantOpen, onReabrir }: Props) {
+export default function DashboardPanel({ orders, produtoCategorias, restaurantOpen, onReabrir }: Props) {
   const [dayIndex, setDayIndex] = useState(0)
 
-  const todayData = useMemo(() => computeTodayData(orders), [orders])
+  const todayData = useMemo(() => computeTodayData(orders, produtoCategorias), [orders, produtoCategorias])
   const data = dayIndex === 0 ? todayData : { ...HISTORICO_DIAS[dayIndex - 1], sub: '' }
 
   const ticketMedio = data.pedidos ? Math.round(data.faturado / data.pedidos) : 0

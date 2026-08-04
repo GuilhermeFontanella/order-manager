@@ -1,14 +1,17 @@
 import type { CounterOrder } from './types'
+import type { AuthUser } from '../../services/auth'
 import { elapsedLabel } from './utils'
 
 type Props = {
   orders: CounterOrder[]
   now: number
-  adminMode: boolean
-  onReverter: (id: number) => void
+  papel: AuthUser['papel'] | undefined
+  onReverter: (id: string) => void
 }
 
-export default function DeliveredList({ orders, now, adminMode, onReverter }: Props) {
+export default function DeliveredList({ orders, now, papel, onReverter }: Props) {
+  const podeReverter = papel === 'MANAGER' || papel === 'HEAD_CHEF'
+
   const entregues = [...orders]
     .sort((a, b) => (b.entregueEm ?? 0) - (a.entregueEm ?? 0))
     .slice(0, 6)
@@ -24,9 +27,9 @@ export default function DeliveredList({ orders, now, adminMode, onReverter }: Pr
             <span className="counter-delivered-senha">#{order.senha}</span>
             <span className="counter-delivered-nome">{order.nome} · Mesa {order.mesa}</span>
             <span className="counter-delivered-time">{elapsedLabel(order.entregueEm ?? now, now)}</span>
-            {adminMode && (
+            {podeReverter && (
               <button type="button" className="counter-btn-revert" onClick={() => onReverter(order.id)}>
-                Reverter (admin)
+                Reverter
               </button>
             )}
           </div>

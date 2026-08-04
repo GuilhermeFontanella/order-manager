@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BrowserQRCodeReader } from '@zxing/browser'
+import { parseMesaLink } from '../../lib/mesaSession'
 
 export default function ScanQR() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const navigate = useNavigate()
   const [status, setStatus] = useState<string>('inicializando')
-  const [manualId, setManualId] = useState('')
+  const [manualLink, setManualLink] = useState('')
+  const [manualError, setManualError] = useState<string | null>(null)
   const codeReaderRef = useRef<BrowserQRCodeReader | null>(null)
 
   useEffect(() => {
@@ -50,35 +52,29 @@ export default function ScanQR() {
     }
   }, [])
 
-  function normalizeTableIdFromQr(text: string) {
-    try {
-      const url = new URL(text)
-      // tenta extrair /order/:tableId
-      const parts = url.pathname.split('/')
-      const idx = parts.indexOf('order')
-      if (idx >= 0 && parts.length > idx + 1) return parts[idx + 1]
-    } catch {
-      // não é URL — pode ser apenas o id
-    }
-    return text
-  }
-
   function handleFound(text: string) {
-    const tableId = normalizeTableIdFromQr(text)
-    localStorage.setItem('tableId', tableId)
-    // stop reader before navigate
+    const mesa = parseMesaLink(text)
+    if (!mesa) {
+      setStatus('nao-reconhecido')
+      return
+    }
+
     // parar a câmera (tracks) já interrompe o leitor
     if (videoRef.current && videoRef.current.srcObject) {
       const s = videoRef.current.srcObject as MediaStream
       s.getTracks().forEach(t => t.stop())
     }
-    navigate(`/order/${tableId}`, { replace: true })
+    navigate(`/r/${mesa.tenantSlug}/mesa/${mesa.qrCodeToken}`, { replace: true })
   }
 
   function useManual() {
-    if (!manualId) return
-    localStorage.setItem('tableId', manualId)
-    navigate(`/order/${manualId}`, { replace: true })
+    const mesa = parseMesaLink(manualLink)
+    if (!mesa) {
+      setManualError('Link inválido. Cole o link completo da mesa (ex: .../r/seu-restaurante/mesa/xxxxx).')
+      return
+    }
+    setManualError(null)
+    navigate(`/r/${mesa.tenantSlug}/mesa/${mesa.qrCodeToken}`, { replace: true })
   }
 
   return (
@@ -90,12 +86,19 @@ export default function ScanQR() {
         {status === 'pedindo-permissao' && <p>Solicitando acesso à câmera...</p>}
         {status === 'escaneando' && <p>Aponte a câmera para o QR.</p>}
         {status === 'erro' && <p>Erro ao acessar câmera — use entrada manual abaixo.</p>}
+        {status === 'nao-reconhecido' && <p>QR não reconhecido — use entrada manual abaixo.</p>}
       </div>
 
       <div>
-        <p>Se o QR não for detectado automaticamente, insira manualmente o número da mesa:</p>
-        <input value={manualId} onChange={e => setManualId(e.target.value)} placeholder="Ex: mesa-5" />
+        <p>Se o QR não for detectado automaticamente, cole o link da mesa:</p>
+        <input
+          value={manualLink}
+          onChange={e => setManualLink(e.target.value)}
+          placeholder="Ex: https://.../r/seu-restaurante/mesa/xxxxx"
+          style={{ width: '100%', maxWidth: 420 }}
+        />
         <button onClick={useManual} style={{ marginLeft: 8 }}>Usar mesa</button>
+        {manualError && <p style={{ color: '#c00' }}>{manualError}</p>}
       </div>
 
       <p style={{ marginTop: 12, color: '#666' }}>

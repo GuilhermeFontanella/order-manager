@@ -1,6 +1,7 @@
 import type { KitchenOrder } from './types'
+import type { AuthUser } from '../../services/auth'
 
-const JANELA_CORRECAO_MS = 40 * 1000 // 40s para "pegar de volta" sem ser admin
+const JANELA_VOLTAR_PARA_PREPARO_MS = 40 * 1000
 
 function elapsedLabel(ts: number, now: number) {
   const mins = Math.floor((now - ts) / 60000)
@@ -19,24 +20,24 @@ function elapsedClass(ts: number, now: number) {
 type Props = {
   order: KitchenOrder
   now: number
-  adminMode: boolean
+  papel: AuthUser['papel'] | undefined
   isNew: boolean
-  onIniciarPreparo: (id: number) => void
-  onFinalizarPreparo: (id: number) => void
-  onPegarDeVolta: (id: number) => void
-  onCancelarPedido: (id: number) => void
+  onFinalizarPreparo: (id: string) => void
+  onPegarDeVolta: (id: string) => void
+  onCancelarPedido: (id: string) => void
 }
 
 export default function TicketCard({
   order,
   now,
-  adminMode,
+  papel,
   isNew,
-  onIniciarPreparo,
   onFinalizarPreparo,
   onPegarDeVolta,
   onCancelarPedido,
 }: Props) {
+  const podeGerenciar = papel === 'MANAGER' || papel === 'HEAD_CHEF'
+
   return (
     <div className={`kitchen-ticket${isNew ? ' new-flash' : ''}`} data-id={order.id}>
       <div className="kitchen-ticket-top">
@@ -66,14 +67,6 @@ export default function TicketCard({
 
       {order.obs && <div className="kitchen-ticket-obs">⚠ {order.obs}</div>}
 
-      {order.status === 'fila_preparo' && (
-        <div className="kitchen-ticket-actions">
-          <button className="kitchen-btn-action start" onClick={() => onIniciarPreparo(order.id)}>
-            ▶ Pegar para preparo
-          </button>
-        </div>
-      )}
-
       {order.status === 'preparando' && (
         <div className="kitchen-ticket-actions">
           <button className="kitchen-btn-action finish" onClick={() => onFinalizarPreparo(order.id)}>
@@ -85,21 +78,21 @@ export default function TicketCard({
       {order.status === 'pronto' && (() => {
         const prontoEm = order.prontoEm ?? now
         const decorrido = now - prontoEm
-        const restante = Math.max(0, JANELA_CORRECAO_MS - decorrido)
-        const pct = Math.max(0, Math.min(100, (restante / JANELA_CORRECAO_MS) * 100))
+        const restante = Math.max(0, JANELA_VOLTAR_PARA_PREPARO_MS - decorrido)
+        const pct = Math.max(0, Math.min(100, (restante / JANELA_VOLTAR_PARA_PREPARO_MS) * 100))
         const expirado = restante <= 0
-        const podeVoltar = adminMode || !expirado
+        const podeVoltar = podeGerenciar || !expirado
 
         let countdownEl
-        if (adminMode) {
+        if (podeGerenciar) {
           countdownEl = expirado ? (
-            <span className="kitchen-countdown-text admin-ok">admin: sem limite</span>
+            <span className="kitchen-countdown-text admin-ok">head chef: sem limite</span>
           ) : (
-            <span className="kitchen-countdown-text">{Math.ceil(restante / 1000)}s + admin</span>
+            <span className="kitchen-countdown-text">{Math.ceil(restante / 1000)}s + head chef</span>
           )
         } else {
           countdownEl = expirado ? (
-            <span className="kitchen-countdown-text expired">prazo esgotado</span>
+            <span className="kitchen-countdown-text expired">prazo esgotado — peça a um head chef</span>
           ) : (
             <span className="kitchen-countdown-text">{Math.ceil(restante / 1000)}s p/ corrigir</span>
           )
@@ -109,7 +102,7 @@ export default function TicketCard({
           <>
             <div className="kitchen-countdown-wrap">
               <div className="kitchen-countdown-bar-bg">
-                <div className="kitchen-countdown-bar-fill" style={{ width: `${adminMode ? 100 : pct}%` }} />
+                <div className="kitchen-countdown-bar-fill" style={{ width: `${podeGerenciar ? 100 : pct}%` }} />
               </div>
               {countdownEl}
             </div>
@@ -122,14 +115,13 @@ export default function TicketCard({
                 ↺ Pegar de volta
               </button>
             </div>
-            {adminMode && (
-              <button className="kitchen-admin-cancel" onClick={() => onCancelarPedido(order.id)}>
-                Cancelar pedido (admin)
-              </button>
-            )}
           </>
         )
       })()}
+
+      <button className="kitchen-admin-cancel" onClick={() => onCancelarPedido(order.id)}>
+        Cancelar pedido
+      </button>
     </div>
   )
 }

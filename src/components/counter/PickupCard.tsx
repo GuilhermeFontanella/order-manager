@@ -1,42 +1,26 @@
-import { useState } from 'react'
 import type { CounterOrder } from './types'
+import type { AuthUser } from '../../services/auth'
 import { elapsedLabel, elapsedClass } from './utils'
 import { fmt } from '../../data/menu'
-
-const JANELA_CORRECAO_MS = 40 * 1000
 
 type Props = {
   order: CounterOrder
   now: number
-  adminMode: boolean
+  papel: AuthUser['papel'] | undefined
   isNew: boolean
-  onEntregar: (id: number) => void
-  onChamar: (id: number) => void
-  onConfirmarDevolucao: (id: number, motivo: string) => void
+  onEntregar: (id: string) => void
+  onChamar: (id: string) => void
+  onDevolverParaCozinha: (id: string) => void
 }
 
-export default function PickupCard({ order, now, adminMode, isNew, onEntregar, onChamar, onConfirmarDevolucao }: Props) {
-  const [devolverAberto, setDevolverAberto] = useState(false)
-  const [motivo, setMotivo] = useState('')
-
+export default function PickupCard({ order, now, papel, isNew, onEntregar, onChamar, onDevolverParaCozinha }: Props) {
   const prontoEm = order.prontoEm ?? now
-  const decorrido = now - prontoEm
-  const restante = Math.max(0, JANELA_CORRECAO_MS - decorrido)
-  const janelaCozinhaAtiva = restante > 0
-  const podeDevolver = adminMode || !janelaCozinhaAtiva
+  const podeDevolver = papel === 'MANAGER' || papel === 'HEAD_CHEF'
 
   const cooldownRestante = order.cooldownUntil ? Math.max(0, order.cooldownUntil - now) : 0
   const emCooldown = cooldownRestante > 0
 
   const itensTxt = order.itens.map(i => `${i.qty}x ${i.nome}`).join(' · ')
-
-  function handleConfirmarDevolucao() {
-    const trimmed = motivo.trim()
-    if (!trimmed) return
-    onConfirmarDevolucao(order.id, trimmed)
-    setDevolverAberto(false)
-    setMotivo('')
-  }
 
   return (
     <div className={`counter-pickup-card${isNew ? ' new-flash' : ''}`} data-id={order.id}>
@@ -71,33 +55,16 @@ export default function PickupCard({ order, now, adminMode, isNew, onEntregar, o
         {emCooldown ? `Aguarde ${Math.ceil(cooldownRestante / 1000)}s para chamar de novo` : '🔊 Chamar novamente'}
       </button>
 
-      {podeDevolver ? (
-        <>
-          <button type="button" className="counter-devolver-toggle" onClick={() => setDevolverAberto(prev => !prev)}>
-            {devolverAberto ? 'Cancelar devolução' : 'Devolver para a cozinha'}
-          </button>
-          {devolverAberto && (
-            <div className="counter-devolver-box">
-              <textarea
-                value={motivo}
-                onChange={event => setMotivo(event.target.value)}
-                placeholder="Motivo da devolução (obrigatório)... ex: item errado, cliente reclamou"
-              />
-              <button
-                type="button"
-                className="counter-btn-devolver-confirm"
-                disabled={!motivo.trim()}
-                onClick={handleConfirmarDevolucao}
-              >
-                Confirmar devolução
-              </button>
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="counter-locked-note">
-          Ainda dentro da janela de correção da cozinha ({Math.ceil(restante / 1000)}s) — devolução pelo balcão libera depois disso.
-        </p>
+      {podeDevolver && (
+        <button
+          type="button"
+          className="counter-devolver-toggle"
+          onClick={() => {
+            if (confirm(`Devolver o pedido #${order.senha} para a cozinha?`)) onDevolverParaCozinha(order.id)
+          }}
+        >
+          ↺ Devolver para a cozinha
+        </button>
       )}
     </div>
   )

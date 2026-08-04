@@ -1,17 +1,18 @@
 import type { CounterOrder } from './types'
+import type { AuthUser } from '../../services/auth'
 import PickupCard from './PickupCard'
 
 type Props = {
   orders: CounterOrder[]
   now: number
-  adminMode: boolean
-  newOrderId: number | null
-  onEntregar: (id: number) => void
-  onChamar: (id: number) => void
-  onConfirmarDevolucao: (id: number, motivo: string) => void
+  papel: AuthUser['papel'] | undefined
+  newOrderId: string | null
+  onEntregar: (id: string) => void
+  onChamar: (id: string) => void
+  onDevolverParaCozinha: (id: string) => void
 }
 
-export default function PickupGrid({ orders, now, adminMode, newOrderId, onEntregar, onChamar, onConfirmarDevolucao }: Props) {
+export default function PickupGrid({ orders, now, papel, newOrderId, onEntregar, onChamar, onDevolverParaCozinha }: Props) {
   const prontos = [...orders].sort((a, b) => (a.prontoEm ?? 0) - (b.prontoEm ?? 0))
 
   if (prontos.length === 0) {
@@ -25,11 +26,11 @@ export default function PickupGrid({ orders, now, adminMode, newOrderId, onEntre
           key={order.id}
           order={order}
           now={now}
-          adminMode={adminMode}
+          papel={papel}
           isNew={order.id === newOrderId}
           onEntregar={onEntregar}
           onChamar={onChamar}
-          onConfirmarDevolucao={onConfirmarDevolucao}
+          onDevolverParaCozinha={onDevolverParaCozinha}
         />
       ))}
     </div>

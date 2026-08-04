@@ -1,32 +1,34 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-
-const MOCK_USERS = [
-  { username: 'balcao', password: 'balcao123', role: 'balcao', redirectTo: '/counter' },
-  { username: 'cozinha', password: 'cozinha123', role: 'cozinha', redirectTo: '/kitchen' },
-]
+import { loginService } from '../../services/auth'
+import { resolveDefaultRoute } from '../../routes'
 
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
 
-    const match = MOCK_USERS.find(u => u.username === username.trim() && u.password === password)
-    if (!match) {
-      setError('Usuário ou senha inválidos.')
-      return
-    }
-
     setError('')
-    login(`mock-token-${match.role}`, { role: match.role, username: match.username })
-    navigate(match.redirectTo, { replace: true })
+    setIsSubmitting(true)
+
+    try {
+      const { accessToken, user } = await loginService({ email: email.trim(), senha: password })
+      login(accessToken, user)
+      navigate(resolveDefaultRoute(true, user.papel), { replace: true })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Não foi possível realizar o login.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -35,15 +37,16 @@ export default function Login() {
         <h1 className="text-xl font-extrabold text-slate-900">Entrar</h1>
         <p className="mt-1 text-sm text-slate-500">Acesse o painel da sua função.</p>
 
-        <label htmlFor="login-username" className="mt-6 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Usuário
+        <label htmlFor="login-email" className="mt-6 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+          E-mail
         </label>
         <input
-          id="login-username"
-          value={username}
-          onChange={event => setUsername(event.target.value)}
-          placeholder="Ex: cozinha"
-          autoComplete="username"
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={event => setEmail(event.target.value)}
+          placeholder="seu@email.com"
+          autoComplete="email"
           className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none focus:border-emerald-500"
         />
 
@@ -74,9 +77,10 @@ export default function Login() {
 
         <button
           type="submit"
-          className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+          disabled={isSubmitting}
+          className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Entrar
+          {isSubmitting ? 'Entrando...' : 'Entrar'}
         </button>
       </form>
     </div>

@@ -1,5 +1,5 @@
 export type ReadyOrderSnapshotItem = {
-  id: number
+  id: string
   senha: number
   nome: string
   mesa: number

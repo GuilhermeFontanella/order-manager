@@ -1,26 +1,22 @@
-import { createContext, useState, useContext } from 'react'
+import { createContext, useEffect, useState, useContext } from 'react'
 import { Navigate } from 'react-router-dom'
-
-interface User {
-  role?: string
-  [key: string]: any
-}
+import { getMe, type AuthUser } from '../services/auth'
 
 interface AuthContextType {
   isAuthenticated: boolean
-  user: User | null
-  login: (token: string, user?: User) => void
+  user: AuthUser | null
+  login: (token: string, user: AuthUser) => void
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-function getStoredUser(): User | null {
+function getStoredUser(): AuthUser | null {
   const raw = localStorage.getItem('user')
   if (!raw) return null
 
   try {
-    return JSON.parse(raw) as User
+    return JSON.parse(raw) as AuthUser
   } catch {
     return null
   }
@@ -30,25 +26,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem('authToken')
   )
-  const [user, setUser] = useState<User | null>(getStoredUser)
+  const [user, setUser] = useState<AuthUser | null>(getStoredUser)
 
-  const login = (token: string, user?: User) => {
+  const login = (token: string, user: AuthUser) => {
     localStorage.setItem('authToken', token)
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user))
-      if (user.role) localStorage.setItem('userRole', user.role)
-      setUser(user)
-    }
+    localStorage.setItem('user', JSON.stringify(user))
+    setUser(user)
     setIsAuthenticated(true)
   }
 
   const logout = () => {
     localStorage.removeItem('authToken')
     localStorage.removeItem('user')
-    localStorage.removeItem('userRole')
     setUser(null)
     setIsAuthenticated(false)
   }
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+
+    getMe()
+      .then(freshUser => {
+        localStorage.setItem('user', JSON.stringify(freshUser))
+        setUser(freshUser)
+      })
+      .catch(() => logout())
+    // Revalida a sessão uma vez no boot do app — se o token expirou, o backend
+    // responde 401 e derrubamos a sessão local em vez de deixar o usuário preso
+    // numa tela protegida com dados stale.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
@@ -80,9 +87,7 @@ export function ProtectedRoute({
   }
 
   if (requiredRoles.length > 0) {
-    const userRole = user?.role ?? localStorage.getItem('userRole')
-    const hasRequiredRole = requiredRoles.some(role => role === userRole)
-
+    const hasRequiredRole = requiredRoles.some(role => role === user?.papel)
     if (!hasRequiredRole) {
       return <Navigate to="/unauthorized" replace />
     }

@@ -1,4 +1,4 @@
-export type OrderStatus = 'fila_preparo' | 'preparando' | 'pronto'
+export type OrderStatus = 'preparando' | 'pronto'
 
 export type OrderItem = {
   qty: number
@@ -7,7 +7,7 @@ export type OrderItem = {
 }
 
 export type KitchenOrder = {
-  id: number
+  id: string
   senha: number
   nome: string
   criadoEm: number

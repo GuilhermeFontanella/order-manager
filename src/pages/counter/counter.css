@@ -247,11 +247,11 @@
 .counter-overview-table .counter-senha-cell{ font-family: var(--mono); font-weight: 700; }
 
 .counter-status-badge{ font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; white-space: nowrap; }
-.counter-status-badge.fila_preparo{ background: var(--c-gold-soft); color: var(--c-gold-dark); }
-.counter-status-badge.preparando{ background: var(--c-blue-tint); color: var(--c-blue-dark); }
-.counter-status-badge.pronto{ background: var(--c-green-tint); color: var(--c-green-dark); }
-.counter-status-badge.entregue{ background: #EDEAE0; color: var(--c-ink-faint); }
-.counter-status-badge.cancelado{ background: var(--c-red-tint); color: var(--c-red); }
+.counter-status-badge.AGUARDANDO_PAGAMENTO{ background: var(--c-gold-soft); color: var(--c-gold-dark); }
+.counter-status-badge.PREPARANDO{ background: var(--c-blue-tint); color: var(--c-blue-dark); }
+.counter-status-badge.PRONTO{ background: var(--c-green-tint); color: var(--c-green-dark); }
+.counter-status-badge.RETIRADO{ background: #EDEAE0; color: var(--c-ink-faint); }
+.counter-status-badge.CANCELADO{ background: var(--c-red-tint); color: var(--c-red); }
 
 @media (max-width: 640px){
   .counter-overview-table thead{ display: none; }

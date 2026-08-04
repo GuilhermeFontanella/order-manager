@@ -1,108 +1,130 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './kitchen.css'
 import KitchenHeader from '../../components/kitchen/KitchenHeader'
 import KitchenColumn from '../../components/kitchen/KitchenColumn'
 import type { KitchenOrder } from '../../components/kitchen/types'
 import { useAuth } from '../../context/AuthContext'
+import { listPedidos, updatePedidoStatus } from '../../services/pedidosStaff'
+import { getApiErrorMessage } from '../../services/apiClient'
+import { usePedidosRealtime } from '../../services/realtime'
+import type { Pedido } from '../../services/storefront'
 
-const NOMES = ['Beatriz', 'Thiago', 'Camila', 'Diego', 'Larissa', 'Pedro', 'Fernanda']
-const ITENS_MOCK = [
-  { qty: 1, nome: 'X-Burger do Zé', opcoes: ['Médio'] },
-  { qty: 1, nome: 'Isca de peixe crocante', opcoes: [] },
-  { qty: 1, nome: 'Chopp artesanal', opcoes: ['400ml'] },
-  { qty: 2, nome: 'Limonada suíça', opcoes: [] },
-]
+function toKitchenOrder(pedido: Pedido): KitchenOrder | null {
+  if (pedido.status !== 'PREPARANDO' && pedido.status !== 'PRONTO') return null
 
-function seedOrders(): KitchenOrder[] {
-  const now = Date.now()
-  return [
-    { id: 1, senha: 38, nome: 'Aline', criadoEm: now - 3 * 60000, status: 'fila_preparo',
-      itens: [{ qty: 1, nome: 'X-Burger do Zé', opcoes: ['Grande', 'Bacon extra'] }], obs: 'Sem cebola' },
-    { id: 2, senha: 39, nome: 'Rafael', criadoEm: now - 1 * 60000, status: 'fila_preparo',
-      itens: [{ qty: 2, nome: 'Limonada suíça', opcoes: [] }], obs: null },
-    { id: 3, senha: 36, nome: 'Carla', criadoEm: now - 6 * 60000, status: 'preparando',
-      itens: [{ qty: 1, nome: 'Picanha na chapa', opcoes: ['Ao ponto'] }, { qty: 1, nome: 'Chopp artesanal', opcoes: ['600ml'] }], obs: null },
-    { id: 4, senha: 35, nome: 'Marcos', criadoEm: now - 11 * 60000, status: 'preparando',
-      itens: [{ qty: 1, nome: 'Bolinho de bacalhau', opcoes: ['Geleia de pimenta extra'] }], obs: 'Cliente com pressa' },
-    { id: 5, senha: 33, nome: 'Juliana', criadoEm: now - 14 * 60000, status: 'pronto', prontoEm: now - 20 * 1000,
-      itens: [{ qty: 1, nome: 'Filé à parmegiana', opcoes: [] }], obs: null },
-    { id: 6, senha: 31, nome: 'Eduardo', criadoEm: now - 18 * 60000, status: 'pronto', prontoEm: now - 90 * 1000,
-      itens: [{ qty: 2, nome: 'Pudim de leite', opcoes: [] }], obs: null },
-  ]
+  return {
+    id: pedido.id,
+    senha: pedido.numeroSequencial,
+    nome: pedido.nomeCliente,
+    criadoEm: new Date(pedido.criadoEm).getTime(),
+    prontoEm: pedido.prontoEm ? new Date(pedido.prontoEm).getTime() : null,
+    status: pedido.status === 'PREPARANDO' ? 'preparando' : 'pronto',
+    itens: pedido.itens.map(item => ({
+      qty: item.quantidade,
+      nome: item.nomeProduto,
+      opcoes: item.opcoesSelecionadas.map(o => `${o.grupoOpcaoNome}: ${o.opcaoNome}`),
+    })),
+    obs: pedido.itens.map(item => item.observacao).filter(Boolean).join(' · ') || null,
+  }
 }
 
 export default function Kitchen() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
   const navigate = useNavigate()
+  const token = localStorage.getItem('authToken')
 
-  const [orders, setOrders] = useState<KitchenOrder[]>(seedOrders)
-  const [nextSenha, setNextSenha] = useState(40)
-  const [adminMode, setAdminMode] = useState(false)
+  const [pedidos, setPedidos] = useState<Record<string, Pedido>>({})
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [restaurantOpen, setRestaurantOpen] = useState(true)
   const [now, setNow] = useState(Date.now())
-  const [newOrderId, setNewOrderId] = useState<number | null>(null)
+  const [newOrderId, setNewOrderId] = useState<string | null>(null)
+  const knownPreparandoIds = useRef(new Set<string>())
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    let isMounted = true
+
+    listPedidos()
+      .then(list => {
+        if (!isMounted) return
+        list.forEach(p => {
+          if (p.status === 'PREPARANDO' || p.status === 'PRONTO') knownPreparandoIds.current.add(p.id)
+        })
+        setPedidos(Object.fromEntries(list.map(p => [p.id, p])))
+      })
+      .catch(() => {
+        if (isMounted) setLoadError('Não foi possível carregar os pedidos.')
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  usePedidosRealtime(token, pedido => {
+    const isNewlyPreparando = pedido.status === 'PREPARANDO' && !knownPreparandoIds.current.has(pedido.id)
+    knownPreparandoIds.current.add(pedido.id)
+
+    setPedidos(prev => ({ ...prev, [pedido.id]: pedido }))
+
+    if (isNewlyPreparando) {
+      setNewOrderId(pedido.id)
+      setTimeout(() => setNewOrderId(current => (current === pedido.id ? null : current)), 1400)
+    }
+  })
+
   function handleLogout() {
     logout()
     navigate('/login', { replace: true })
   }
 
-  function iniciarPreparo(id: number) {
-    setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: 'preparando' } : o)))
+  async function finalizarPreparo(id: string) {
+    try {
+      const updated = await updatePedidoStatus(id, 'PRONTO')
+      setPedidos(prev => ({ ...prev, [id]: updated }))
+    } catch (err) {
+      alert(getApiErrorMessage(err, 'Não foi possível atualizar o pedido. Tente novamente.'))
+    }
   }
 
-  function finalizarPreparo(id: number) {
-    setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: 'pronto', prontoEm: Date.now() } : o)))
+  async function pegarDeVolta(id: string) {
+    try {
+      const updated = await updatePedidoStatus(id, 'PREPARANDO')
+      setPedidos(prev => ({ ...prev, [id]: updated }))
+    } catch (err) {
+      alert(getApiErrorMessage(err, 'Não foi possível voltar o pedido para preparo. Tente novamente.'))
+    }
   }
 
-  function pegarDeVolta(id: number) {
-    setOrders(prev => prev.map(o => (o.id === id ? { ...o, status: 'preparando', prontoEm: null } : o)))
+  async function cancelarPedido(id: string) {
+    if (!confirm('Cancelar este pedido?')) return
+    try {
+      const updated = await updatePedidoStatus(id, 'CANCELADO')
+      setPedidos(prev => ({ ...prev, [id]: updated }))
+    } catch (err) {
+      alert(getApiErrorMessage(err, 'Não foi possível cancelar o pedido. Tente novamente.'))
+    }
   }
 
-  function cancelarPedido(id: number) {
-    if (!confirm('Cancelar este pedido? Essa ação é exclusiva do usuário admin.')) return
-    setOrders(prev => prev.filter(o => o.id !== id))
-  }
-
-  function simularNovoPedido() {
-    const id = Date.now()
-    const senha = nextSenha
-    setNextSenha(prev => prev + 1)
-    setOrders(prev => [
-      ...prev,
-      {
-        id,
-        senha,
-        nome: NOMES[Math.floor(Math.random() * NOMES.length)],
-        criadoEm: Date.now(),
-        status: 'fila_preparo',
-        itens: [ITENS_MOCK[Math.floor(Math.random() * ITENS_MOCK.length)]],
-        obs: Math.random() > 0.7 ? 'Capricha no ponto!' : null,
-      },
-    ])
-    setNewOrderId(id)
-    setTimeout(() => setNewOrderId(current => (current === id ? null : current)), 1400)
-  }
-
-  const fila = orders.filter(o => o.status === 'fila_preparo')
-  const preparando = orders.filter(o => o.status === 'preparando')
-  const pronto = orders.filter(o => o.status === 'pronto')
+  const kitchenOrders = useMemo(
+    () => Object.values(pedidos).map(toKitchenOrder).filter((o): o is KitchenOrder => o !== null),
+    [pedidos]
+  )
+  const preparando = kitchenOrders.filter(o => o.status === 'preparando')
+  const pronto = kitchenOrders.filter(o => o.status === 'pronto')
 
   return (
     <div className="kitchen-page w-full">
       <KitchenHeader
         clock={new Date(now).toLocaleTimeString('pt-BR')}
-        adminMode={adminMode}
-        onToggleAdmin={() => setAdminMode(prev => !prev)}
+        papel={user?.papel}
         restaurantOpen={restaurantOpen}
         onToggleRestaurantOpen={() => setRestaurantOpen(prev => !prev)}
-        onSimularNovoPedido={simularNovoPedido}
         onLogout={handleLogout}
       />
 
@@ -112,28 +134,17 @@ export default function Kitchen() {
         </div>
       )}
 
+      {loadError && <div className="kitchen-closed-banner">{loadError}</div>}
+
       <div className="kitchen-board">
-        <KitchenColumn
-          title="Fila de preparo"
-          variant="fila"
-          orders={fila}
-          now={now}
-          adminMode={adminMode}
-          newOrderId={newOrderId}
-          onIniciarPreparo={iniciarPreparo}
-          onFinalizarPreparo={finalizarPreparo}
-          onPegarDeVolta={pegarDeVolta}
-          onCancelarPedido={cancelarPedido}
-        />
         <KitchenColumn
           title="Preparando"
           variant="preparando"
           live
           orders={preparando}
           now={now}
-          adminMode={adminMode}
+          papel={user?.papel}
           newOrderId={newOrderId}
-          onIniciarPreparo={iniciarPreparo}
           onFinalizarPreparo={finalizarPreparo}
           onPegarDeVolta={pegarDeVolta}
           onCancelarPedido={cancelarPedido}
@@ -143,9 +154,8 @@ export default function Kitchen() {
           variant="pronto"
           orders={pronto}
           now={now}
-          adminMode={adminMode}
+          papel={user?.papel}
           newOrderId={newOrderId}
-          onIniciarPreparo={iniciarPreparo}
           onFinalizarPreparo={finalizarPreparo}
           onPegarDeVolta={pegarDeVolta}
           onCancelarPedido={cancelarPedido}

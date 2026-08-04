@@ -3,8 +3,10 @@ import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Wallet } from 'luci
 import { useCart } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
+import { readMesaSession } from '../../lib/mesaSession'
+import { confirmarPagamento, createPedido, type MetodoPagamento, type PedidoCriado } from '../../services/storefront'
 
-type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao' | 'carteira'
+type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao'
 
 function ProgressDots({ active }: { active: 0 | 1 }) {
   return (
@@ -112,6 +114,13 @@ export default function Checkout() {
   const [step, setStep] = useState<Step>('identificacao')
   const [nome, setNome] = useState('')
 
+  const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento | null>(null)
+  const [pedido, setPedido] = useState<PedidoCriado | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+
   const [copied, setCopied] = useState(false)
   const pixCode = '00020126360014BR.GOV.BCB.PIX0114+55119999999952040000530398654' + Math.round(total)
 
@@ -125,9 +134,58 @@ export default function Checkout() {
     cardValidade.length === 5 &&
     cardCvv.length >= 3
 
-  function finishOrder() {
-    clear()
-    navigate('/order')
+  async function handleConfirmPedido() {
+    if (!metodoPagamento) return
+
+    const session = readMesaSession()
+    if (!session) {
+      setSubmitError('Sessão da mesa expirada. Escaneie o QR code novamente.')
+      return
+    }
+
+    setSubmitError(null)
+    setSubmitting(true)
+    try {
+      const created = await createPedido(session.tenantSlug, {
+        mesaQrCodeToken: session.qrCodeToken,
+        nomeCliente: nome.trim(),
+        pagamento: { metodo: metodoPagamento },
+        itens: items.map(it => ({
+          produtoId: it.item.id,
+          quantidade: it.qty,
+          observacao: it.obs || undefined,
+        })),
+      })
+      setPedido(created)
+      setStep(metodoPagamento === 'PIX' ? 'pix' : 'cartao')
+    } catch {
+      setSubmitError('Não foi possível enviar o pedido. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleConfirmPagamento() {
+    if (!pedido) return
+
+    const session = readMesaSession()
+    if (!session) {
+      setConfirmError('Sessão da mesa expirada. Escaneie o QR code novamente.')
+      return
+    }
+
+    setConfirmError(null)
+    setConfirming(true)
+    try {
+      const { pedido: updated } = await confirmarPagamento(session.tenantSlug, pedido.id, pedido.confirmacaoToken)
+      setPedido({ ...updated, confirmacaoToken: pedido.confirmacaoToken })
+      clear()
+      navigate('/order')
+    } catch {
+      setConfirmError('Não foi possível confirmar o pagamento. Tente novamente.')
+    } finally {
+      setConfirming(false)
+    }
   }
 
   async function handleCopyPixCode() {
@@ -182,7 +240,7 @@ export default function Checkout() {
           <button
             type="button"
             disabled={!nome.trim()}
-            onClick={() => setStep('revisao')}
+            onClick={() => setStep('pagamento')}
             className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
               nome.trim() ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
             }`}
@@ -194,48 +252,16 @@ export default function Checkout() {
     )
   }
 
-  if (step === 'revisao') {
-    return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Revisão do pedido" active={1} onClose={() => navigate(-1)} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Revisão do pedido</h2>
-        <div className="px-4 pb-24">
-          <ul className="space-y-3">
-            {items.map(it => (
-              <li key={it.id} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                <div className="text-left">
-                  <div className="font-semibold text-slate-900">{it.item.nome}</div>
-                  <div className="text-xs text-gray-500">{it.qty} x {fmt(it.item.preco)}</div>
-                </div>
-                <div className="font-mono text-slate-900">{fmt(it.item.preco * it.qty)}</div>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-6 flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-            <div className="text-left">
-              <div className="text-sm text-gray-500">Total</div>
-              <div className="font-bold text-lg text-slate-900">{fmt(total)}</div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={() => setStep('pagamento')} className="px-4 py-2 bg-green-600 text-white rounded-xl"><Check /></button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   if (step === 'pagamento') {
     const methods = [
-      { id: 'pix' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode },
-      { id: 'cartao' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard },
-      { id: 'carteira' as const, label: 'Carteira digital', desc: 'Apple Pay, Google Pay', icon: Wallet },
+      { id: 'PIX' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode },
+      { id: 'CARTAO_CREDITO' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard },
+      { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet },
     ]
 
     return (
       <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Forma de pagamento" active={1} onClose={() => setStep('revisao')} />
+        <CheckoutHeader title="Forma de pagamento" active={1} onClose={() => setStep('identificacao')} />
         <h2 className="text-base font-bold text-slate-900 mb-8">Forma de pagamento</h2>
 
         <div className="px-4 pb-24">
@@ -253,7 +279,7 @@ export default function Checkout() {
                 <button
                   key={method.id}
                   type="button"
-                  onClick={() => setStep(method.id)}
+                  onClick={() => { setMetodoPagamento(method.id); setStep('revisao') }}
                   className="w-full flex items-center gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm text-left transition hover:bg-slate-50"
                 >
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
@@ -273,13 +299,59 @@ export default function Checkout() {
     )
   }
 
+  if (step === 'revisao') {
+    return (
+      <div className="min-h-screen bg-[#f5efe1]">
+        <CheckoutHeader title="Revisão do pedido" active={1} onClose={() => setStep('pagamento')} />
+        <h2 className="text-base font-bold text-slate-900 mb-8">Revisão do pedido</h2>
+        <div className="px-4 pb-24">
+          <ul className="space-y-3">
+            {items.map(it => (
+              <li key={it.id} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
+                <div className="text-left">
+                  <div className="font-semibold text-slate-900">{it.item.nome}</div>
+                  <div className="text-xs text-gray-500">{it.qty} x {fmt(it.item.preco)}</div>
+                </div>
+                <div className="font-mono text-slate-900">{fmt(it.item.preco * it.qty)}</div>
+              </li>
+            ))}
+          </ul>
+
+          {submitError && (
+            <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{submitError}</p>
+          )}
+
+          <div className="mt-6 flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
+            <div className="text-left">
+              <div className="text-sm text-gray-500">Total</div>
+              <div className="font-bold text-lg text-slate-900">{fmt(total)}</div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={handleConfirmPedido}
+                className={`px-4 py-2 rounded-xl text-white ${submitting ? 'cursor-not-allowed bg-slate-300' : 'bg-green-600'}`}
+              >
+                <Check />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (step === 'pix') {
     return (
       <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Pagar com Pix" active={1} onClose={() => setStep('pagamento')} />
+        <CheckoutHeader title="Pagar com Pix" active={1} onClose={() => setStep('revisao')} />
         <h2 className="text-base font-bold text-slate-900 mb-8">Pagar com Pix</h2>
 
         <div className="px-4 pb-24">
+          {pedido && (
+            <p className="mb-2 text-right text-xs text-slate-500">Pedido nº {pedido.numeroSequencial}</p>
+          )}
           <ItemSummaryCard itemCount={itemCount} total={total} />
 
           <div className="rounded-2xl bg-white p-6 shadow-sm flex flex-col items-center">
@@ -306,118 +378,103 @@ export default function Checkout() {
             Aguardando confirmação do pagamento...
           </div>
 
-          <button
-            type="button"
-            onClick={finishOrder}
-            className="mt-6 w-full rounded-2xl bg-emerald-700 px-4 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
-          >
-            Simular pagamento confirmado
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  if (step === 'cartao') {
-    return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Cartão de crédito" active={1} onClose={() => setStep('pagamento')} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Cartão de crédito</h2>
-
-        <div className="px-4 pb-24">
-          <ItemSummaryCard itemCount={itemCount} total={total} />
-
-          <label htmlFor="card-number" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Número do cartão
-          </label>
-          <input
-            id="card-number"
-            value={cardNumber}
-            onChange={event => setCardNumber(formatCardNumber(event.target.value))}
-            placeholder="0000 0000 0000 0000"
-            inputMode="numeric"
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-          />
-
-          <label htmlFor="card-name" className="mt-5 block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Nome impresso no cartão
-          </label>
-          <input
-            id="card-name"
-            value={cardName}
-            onChange={event => setCardName(event.target.value)}
-            placeholder="Como está no cartão"
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-          />
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div>
-              <label htmlFor="card-validade" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Validade
-              </label>
-              <input
-                id="card-validade"
-                value={cardValidade}
-                onChange={event => setCardValidade(formatValidade(event.target.value))}
-                placeholder="MM/AA"
-                inputMode="numeric"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="card-cvv" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                CVV
-              </label>
-              <input
-                id="card-cvv"
-                value={cardCvv}
-                onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="123"
-                inputMode="numeric"
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
+          {confirmError && (
+            <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{confirmError}</p>
+          )}
 
           <button
             type="button"
-            disabled={!cardValid}
-            onClick={finishOrder}
+            disabled={confirming}
+            onClick={handleConfirmPagamento}
             className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
-              cardValid ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
+              confirming ? 'cursor-not-allowed bg-emerald-400' : 'bg-emerald-700 hover:bg-emerald-800'
             }`}
           >
-            Pagar {fmt(total)}
+            {confirming ? 'Confirmando...' : 'Simular pagamento confirmado'}
           </button>
         </div>
       </div>
     )
   }
+
+  const cardStepTitle = metodoPagamento === 'CARTAO_DEBITO' ? 'Cartão de débito' : 'Cartão de crédito'
 
   return (
     <div className="min-h-screen bg-[#f5efe1]">
-      <CheckoutHeader title="Carteira digital" active={1} onClose={() => setStep('pagamento')} />
-      <h2 className="text-base font-bold text-slate-900 mb-8">Carteira digital</h2>
+      <CheckoutHeader title={cardStepTitle} active={1} onClose={() => setStep('revisao')} />
+      <h2 className="text-base font-bold text-slate-900 mb-8">{cardStepTitle}</h2>
 
       <div className="px-4 pb-24">
+        {pedido && (
+          <p className="mb-2 text-right text-xs text-slate-500">Pedido nº {pedido.numeroSequencial}</p>
+        )}
         <ItemSummaryCard itemCount={itemCount} total={total} />
 
-        <div className="rounded-2xl bg-white p-6 shadow-sm flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
-            <Wallet className="h-6 w-6" />
+        <label htmlFor="card-number" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Número do cartão
+        </label>
+        <input
+          id="card-number"
+          value={cardNumber}
+          onChange={event => setCardNumber(formatCardNumber(event.target.value))}
+          placeholder="0000 0000 0000 0000"
+          inputMode="numeric"
+          className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
+        />
+
+        <label htmlFor="card-name" className="mt-5 block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Nome impresso no cartão
+        </label>
+        <input
+          id="card-name"
+          value={cardName}
+          onChange={event => setCardName(event.target.value)}
+          placeholder="Como está no cartão"
+          className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
+        />
+
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="card-validade" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Validade
+            </label>
+            <input
+              id="card-validade"
+              value={cardValidade}
+              onChange={event => setCardValidade(formatValidade(event.target.value))}
+              placeholder="MM/AA"
+              inputMode="numeric"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
+            />
           </div>
-          <h3 className="mt-4 font-semibold text-slate-900">Pagar com carteira digital</h3>
-          <p className="mt-2 text-sm text-slate-500">
-            Você vai confirmar o pagamento de {fmt(total)} usando o método salvo no seu dispositivo.
-          </p>
+          <div>
+            <label htmlFor="card-cvv" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+              CVV
+            </label>
+            <input
+              id="card-cvv"
+              value={cardCvv}
+              onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="123"
+              inputMode="numeric"
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
+            />
+          </div>
         </div>
+
+        {confirmError && (
+          <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{confirmError}</p>
+        )}
 
         <button
           type="button"
-          onClick={finishOrder}
-          className="mt-6 w-full rounded-2xl bg-emerald-700 px-4 py-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800"
+          disabled={!cardValid || confirming}
+          onClick={handleConfirmPagamento}
+          className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
+            cardValid && !confirming ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
+          }`}
         >
-          Confirmar pagamento
+          {confirming ? 'Confirmando...' : `Pagar ${fmt(total)}`}
         </button>
       </div>
     </div>

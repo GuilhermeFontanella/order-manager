@@ -1,18 +1,18 @@
 import type { KitchenOrder } from './types'
+import type { AuthUser } from '../../services/auth'
 import TicketCard from './TicketCard'
 
 type Props = {
   title: string
-  variant: 'fila' | 'preparando' | 'pronto'
+  variant: 'preparando' | 'pronto'
   live?: boolean
   orders: KitchenOrder[]
   now: number
-  adminMode: boolean
-  newOrderId: number | null
-  onIniciarPreparo: (id: number) => void
-  onFinalizarPreparo: (id: number) => void
-  onPegarDeVolta: (id: number) => void
-  onCancelarPedido: (id: number) => void
+  papel: AuthUser['papel'] | undefined
+  newOrderId: string | null
+  onFinalizarPreparo: (id: string) => void
+  onPegarDeVolta: (id: string) => void
+  onCancelarPedido: (id: string) => void
 }
 
 export default function KitchenColumn({
@@ -21,9 +21,8 @@ export default function KitchenColumn({
   live,
   orders,
   now,
-  adminMode,
+  papel,
   newOrderId,
-  onIniciarPreparo,
   onFinalizarPreparo,
   onPegarDeVolta,
   onCancelarPedido,
@@ -49,9 +48,8 @@ export default function KitchenColumn({
               key={order.id}
               order={order}
               now={now}
-              adminMode={adminMode}
+              papel={papel}
               isNew={order.id === newOrderId}
-              onIniciarPreparo={onIniciarPreparo}
               onFinalizarPreparo={onFinalizarPreparo}
               onPegarDeVolta={onPegarDeVolta}
               onCancelarPedido={onCancelarPedido}

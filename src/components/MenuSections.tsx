@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { MENU } from '../data/menu';
 import type { Category, Item } from '../data/menu';
 import ProductCard from './ProductCard'
 import ItemSheet from './ItemSheet'
@@ -8,17 +7,19 @@ import DetailsSheet from './DetailsSheet';
 
 type Props = {
   search?: string
+  categories: Category[]
+  loading?: boolean
 }
 
-export default function MenuSections({ search = '' }: Props) {
+export default function MenuSections({ search = '', categories, loading = false }: Props) {
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     // Highlight active tab on scroll
-    const sections = MENU.map(c => document.getElementById('sec-' + c.id)).filter(Boolean)
+    const sections = categories.map(c => document.getElementById('sec-' + c.id)).filter(Boolean)
     function onScroll() {
-      let current = MENU[0]?.id
+      let current = categories[0]?.id
       sections.forEach((sec) => {
         if (!sec) return
         if ((sec as HTMLElement).getBoundingClientRect().top - 160 <= 0) {
@@ -31,22 +32,22 @@ export default function MenuSections({ search = '' }: Props) {
 
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  }, [categories])
 
   const [selected, setSelected] = useState<Item | null>(null)
   const { add } = useCart()
 
   const normalizedSearch = search.trim().toLowerCase()
   const filteredMenu = useMemo(() => {
-    if (!normalizedSearch) return MENU
-    return MENU.map(cat => ({
+    if (!normalizedSearch) return categories
+    return categories.map(cat => ({
       ...cat,
       itens: cat.itens.filter(item =>
         item.nome.toLowerCase().includes(normalizedSearch) ||
         item.desc?.toLowerCase().includes(normalizedSearch)
       )
     })).filter(cat => cat.itens.length > 0)
-  }, [normalizedSearch])
+  }, [categories, normalizedSearch])
 
   return (
     <div>
@@ -64,7 +65,11 @@ export default function MenuSections({ search = '' }: Props) {
       </div>
 
       <main className="px-4">
-        {filteredMenu.length === 0 ? (
+        {loading ? (
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
+            Carregando cardápio...
+          </div>
+        ) : filteredMenu.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
             Nenhum item encontrado para sua busca.
           </div>

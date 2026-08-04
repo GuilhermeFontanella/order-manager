@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { CounterOrder } from '../../components/counter/types'
+import type { AuthUser } from '../../services/auth'
 import TabsNav from '../../components/counter/TabsNav'
 import StatsRow from '../../components/counter/StatsRow'
 import ClosedBanner from '../../components/counter/ClosedBanner'
@@ -12,15 +13,15 @@ import { fmt } from '../../data/menu'
 type Props = {
   orders: CounterOrder[]
   now: number
-  adminMode: boolean
+  papel: AuthUser['papel'] | undefined
   restaurantOpen: boolean
-  newOrderId: number | null
+  newOrderId: string | null
   lastCall: LastCall
   callFlash: boolean
-  onEntregar: (id: number) => void
-  onChamar: (id: number) => void
-  onConfirmarDevolucao: (id: number, motivo: string) => void
-  onReverterEntrega: (id: number) => void
+  onEntregar: (id: string) => void
+  onChamar: (id: string) => void
+  onDevolverParaCozinha: (id: string) => void
+  onReverterEntrega: (id: string) => void
   horaAbertura: string
   onAbrirPainelDeChamada: () => void
 }
@@ -28,23 +29,23 @@ type Props = {
 export default function BalcaoPanel({
   orders,
   now,
-  adminMode,
+  papel,
   restaurantOpen,
   newOrderId,
   lastCall,
   callFlash,
   onEntregar,
   onChamar,
-  onConfirmarDevolucao,
+  onDevolverParaCozinha,
   onReverterEntrega,
   horaAbertura,
   onAbrirPainelDeChamada,
 }: Props) {
   const [tab, setTab] = useState<'retirada' | 'todos'>('retirada')
 
-  const prontos = orders.filter(o => o.status === 'pronto')
-  const entregues = orders.filter(o => o.status === 'entregue')
-  const validos = orders.filter(o => o.status !== 'cancelado')
+  const prontos = orders.filter(o => o.status === 'PRONTO')
+  const entregues = orders.filter(o => o.status === 'RETIRADO')
+  const validos = orders.filter(o => o.status !== 'CANCELADO')
   const faturado = validos.reduce((s, o) => s + o.valor, 0)
   const totalPedidos = validos.length
   const ticketMedio = totalPedidos ? Math.round(faturado / totalPedidos) : 0
@@ -72,14 +73,14 @@ export default function BalcaoPanel({
             <PickupGrid
               orders={prontos}
               now={now}
-              adminMode={adminMode}
+              papel={papel}
               newOrderId={newOrderId}
               onEntregar={onEntregar}
               onChamar={onChamar}
-              onConfirmarDevolucao={onConfirmarDevolucao}
+              onDevolverParaCozinha={onDevolverParaCozinha}
             />
 
-            <DeliveredList orders={entregues} now={now} adminMode={adminMode} onReverter={onReverterEntrega} />
+            <DeliveredList orders={entregues} now={now} papel={papel} onReverter={onReverterEntrega} />
           </div>
         ) : (
           <OverviewTable orders={orders} now={now} />

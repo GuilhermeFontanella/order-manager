@@ -8,7 +8,6 @@ type Props = {
   restaurantOpen: boolean
   onAbrirRestaurante: () => void
   onEncerrarAtividades: () => void
-  onSimularPedidoPronto: () => void
   onLogout: () => void
 }
 
@@ -19,7 +18,6 @@ export default function CounterHeader({
   restaurantOpen,
   onAbrirRestaurante,
   onEncerrarAtividades,
-  onSimularPedidoPronto,
   onLogout,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -69,12 +67,6 @@ export default function CounterHeader({
         {adminMode && restaurantOpen && (
           <button type="button" className="counter-btn-close" onClick={onEncerrarAtividades}>
             ■ Encerrar atividades
-          </button>
-        )}
-
-        {restaurantOpen && (
-          <button type="button" className="counter-btn-sim" onClick={onSimularPedidoPronto}>
-            + Simular pedido pronto
           </button>
         )}
 
