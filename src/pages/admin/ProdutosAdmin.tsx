@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 import { createProduto, deleteProduto, listProdutos, updateProduto, type Produto } from '../../services/produtos'
 import { getApiErrorMessage } from '../../services/apiClient'
 import { fmt } from '../../data/menu'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const emptyForm = { nome: '', descricao: '', preco: '', categoria: '' }
 
@@ -15,6 +16,7 @@ export default function ProdutosAdmin() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [creating, setCreating] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<Produto | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -65,8 +67,10 @@ export default function ProdutosAdmin() {
     }
   }
 
-  async function handleDelete(produto: Produto) {
-    if (!confirm(`Remover "${produto.nome}"?`)) return
+  async function confirmDelete() {
+    const produto = pendingDelete
+    if (!produto) return
+    setPendingDelete(null)
     try {
       await deleteProduto(produto.id)
       setProdutos(prev => prev.filter(p => p.id !== produto.id))
@@ -153,7 +157,7 @@ export default function ProdutosAdmin() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(produto)}
+                    onClick={() => setPendingDelete(produto)}
                     className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
                   >
                     Remover
@@ -164,6 +168,15 @@ export default function ProdutosAdmin() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`Remover "${pendingDelete?.nome}"?`}
+        confirmLabel="Remover"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }

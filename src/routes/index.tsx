@@ -12,6 +12,13 @@ import CounterNavLink from '../components/counter/CounterNavLink'
 import ReadyOrders from '../pages/ready-orders/ReadyOrders'
 import MesasAdmin from '../pages/admin/MesasAdmin'
 import ProdutosAdmin from '../pages/admin/ProdutosAdmin'
+import AdminPanel from '../pages/admin/panel/AdminPanel'
+import DashboardSection from '../pages/admin/panel/sections/DashboardSection'
+import CardapioSection from '../pages/admin/panel/sections/CardapioSection'
+import EstoqueSection from '../pages/admin/panel/sections/EstoqueSection'
+import PedidosSection from '../pages/admin/panel/sections/PedidosSection'
+import EquipeSection from '../pages/admin/panel/sections/EquipeSection'
+import ConfiguracoesSection from '../pages/admin/panel/sections/ConfiguracoesSection'
 
 export function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
   if (!isAuthenticated) {
@@ -19,7 +26,7 @@ export function resolveDefaultRoute(isAuthenticated: boolean, role: string | nul
   }
 
   if (role === 'MANAGER') {
-    return '/dashboard'
+    return '/admin'
   }
 
   if (role === 'HEAD_CHEF' || role === 'KITCHEN') {
@@ -112,6 +119,23 @@ export function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRoles={['MANAGER']}>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardSection />} />
+          <Route path="cardapio" element={<CardapioSection />} />
+          <Route path="estoque" element={<EstoqueSection />} />
+          <Route path="pedidos" element={<PedidosSection />} />
+          <Route path="equipe" element={<EquipeSection />} />
+          <Route path="configuracoes" element={<ConfiguracoesSection />} />
+        </Route>
 
         <Route
           path="/admin/mesas"

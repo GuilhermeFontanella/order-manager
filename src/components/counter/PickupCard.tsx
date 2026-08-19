@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import type { CounterOrder } from './types'
 import type { AuthUser } from '../../services/auth'
 import { elapsedLabel, elapsedClass } from './utils'
 import { fmt } from '../../data/menu'
+import ConfirmDialog from '../ConfirmDialog'
 
 type Props = {
   order: CounterOrder
@@ -14,6 +16,7 @@ type Props = {
 }
 
 export default function PickupCard({ order, now, papel, isNew, onEntregar, onChamar, onDevolverParaCozinha }: Props) {
+  const [confirmDevolver, setConfirmDevolver] = useState(false)
   const prontoEm = order.prontoEm ?? now
   const podeDevolver = papel === 'MANAGER' || papel === 'HEAD_CHEF'
 
@@ -59,13 +62,22 @@ export default function PickupCard({ order, now, papel, isNew, onEntregar, onCha
         <button
           type="button"
           className="counter-devolver-toggle"
-          onClick={() => {
-            if (confirm(`Devolver o pedido #${order.senha} para a cozinha?`)) onDevolverParaCozinha(order.id)
-          }}
+          onClick={() => setConfirmDevolver(true)}
         >
           ↺ Devolver para a cozinha
         </button>
       )}
+
+      <ConfirmDialog
+        open={confirmDevolver}
+        title={`Devolver o pedido #${order.senha} para a cozinha?`}
+        confirmLabel="Devolver"
+        onConfirm={() => {
+          setConfirmDevolver(false)
+          onDevolverParaCozinha(order.id)
+        }}
+        onCancel={() => setConfirmDevolver(false)}
+      />
     </div>
   )
 }

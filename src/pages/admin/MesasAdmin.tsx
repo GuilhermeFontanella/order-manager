@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { createMesa, deleteMesa, listMesas, updateMesa, type Mesa } from '../../services/mesas'
 import { getApiErrorMessage } from '../../services/apiClient'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 function mesaLink(tenantSlug: string, qrCodeToken: string) {
   return `${window.location.origin}/r/${tenantSlug}/mesa/${qrCodeToken}`
@@ -21,6 +22,7 @@ export default function MesasAdmin() {
   const [novoNumero, setNovoNumero] = useState('')
   const [creating, setCreating] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<Mesa | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -66,8 +68,10 @@ export default function MesasAdmin() {
     }
   }
 
-  async function handleDelete(mesa: Mesa) {
-    if (!confirm(`Remover a mesa ${mesa.numero}?`)) return
+  async function confirmDelete() {
+    const mesa = pendingDelete
+    if (!mesa) return
+    setPendingDelete(null)
     try {
       await deleteMesa(mesa.id)
       setMesas(prev => prev.filter(m => m.id !== mesa.id))
@@ -157,7 +161,7 @@ export default function MesasAdmin() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDelete(mesa)}
+                    onClick={() => setPendingDelete(mesa)}
                     className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
                   >
                     Remover
@@ -168,6 +172,15 @@ export default function MesasAdmin() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={`Remover a mesa ${pendingDelete?.numero}?`}
+        confirmLabel="Remover"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import { listPedidos, updatePedidoStatus } from '../../services/pedidosStaff'
 import { getApiErrorMessage } from '../../services/apiClient'
 import { usePedidosRealtime } from '../../services/realtime'
 import type { Pedido } from '../../services/storefront'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 function toKitchenOrder(pedido: Pedido): KitchenOrder | null {
   if (pedido.status !== 'PREPARANDO' && pedido.status !== 'PRONTO') return null
@@ -39,6 +40,7 @@ export default function Kitchen() {
   const [restaurantOpen, setRestaurantOpen] = useState(true)
   const [now, setNow] = useState(Date.now())
   const [newOrderId, setNewOrderId] = useState<string | null>(null)
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null)
   const knownPreparandoIds = useRef(new Set<string>())
 
   useEffect(() => {
@@ -101,8 +103,14 @@ export default function Kitchen() {
     }
   }
 
-  async function cancelarPedido(id: string) {
-    if (!confirm('Cancelar este pedido?')) return
+  function cancelarPedido(id: string) {
+    setPendingCancelId(id)
+  }
+
+  async function confirmCancelarPedido() {
+    const id = pendingCancelId
+    if (!id) return
+    setPendingCancelId(null)
     try {
       const updated = await updatePedidoStatus(id, 'CANCELADO')
       setPedidos(prev => ({ ...prev, [id]: updated }))
@@ -161,6 +169,15 @@ export default function Kitchen() {
           onCancelarPedido={cancelarPedido}
         />
       </div>
+
+      <ConfirmDialog
+        open={pendingCancelId !== null}
+        title="Cancelar este pedido?"
+        confirmLabel="Cancelar pedido"
+        destructive
+        onConfirm={confirmCancelarPedido}
+        onCancel={() => setPendingCancelId(null)}
+      />
     </div>
   )
 }

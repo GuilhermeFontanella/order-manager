@@ -1,4 +1,5 @@
 import type { Category, Item } from '../data/menu'
+import { resolveMediaUrl } from './apiClient'
 
 export function asText(value: unknown): string | undefined {
   if (typeof value === 'string') return value.trim()
@@ -30,7 +31,11 @@ export function normalizeItem(raw: Record<string, unknown>): Item {
     emoji: asText(raw.emoji) ?? asText(raw.icon) ?? '🍽️',
     disponivel: raw.disponivel === false || raw.available === false ? false : true,
     grupos: Array.isArray(raw.grupos) ? (raw.grupos as unknown[]).filter(Boolean) : [],
-    fotos: Array.isArray(raw.fotos) ? (raw.fotos as string[]) : [],
+    fotos: Array.isArray(raw.fotos)
+      ? (raw.fotos as string[]).map(resolveMediaUrl)
+      : Array.isArray(raw.imagens)
+        ? (raw.imagens as string[]).map(resolveMediaUrl)
+        : [],
   }
 }
 

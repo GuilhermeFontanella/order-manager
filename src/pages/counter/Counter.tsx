@@ -14,6 +14,7 @@ import { getApiErrorMessage } from '../../services/apiClient'
 import { usePedidosRealtime } from '../../services/realtime'
 import { listProdutos } from '../../services/produtos'
 import type { Pedido } from '../../services/storefront'
+import ConfirmDialog from '../../components/ConfirmDialog'
 
 const CHAMADA_COOLDOWN_MS = 8000
 
@@ -53,6 +54,7 @@ export default function Counter() {
   const [newOrderId, setNewOrderId] = useState<string | null>(null)
   const [lastCall, setLastCall] = useState<LastCall>(null)
   const [callFlash, setCallFlash] = useState(false)
+  const [confirmEncerrar, setConfirmEncerrar] = useState(false)
   const knownProntoIds = useRef(new Set<string>())
 
   useEffect(() => {
@@ -134,7 +136,11 @@ export default function Counter() {
   }
 
   function encerrarAtividades() {
-    if (!confirm('Encerrar as atividades de hoje? O cardápio para de aceitar pedidos, a cozinha para de receber novos pedidos, e você vai ver o dashboard do dia.')) return
+    setConfirmEncerrar(true)
+  }
+
+  function confirmEncerrarAtividades() {
+    setConfirmEncerrar(false)
     setRestaurantOpen(false)
     setPage('dashboard')
   }
@@ -222,6 +228,16 @@ export default function Counter() {
       ) : (
         <DashboardPanel orders={orders} produtoCategorias={produtoCategorias} restaurantOpen={restaurantOpen} onReabrir={reabrirRestaurante} />
       )}
+
+      <ConfirmDialog
+        open={confirmEncerrar}
+        title="Encerrar as atividades de hoje?"
+        description="O cardápio para de aceitar pedidos, a cozinha para de receber novos pedidos, e você vai ver o dashboard do dia."
+        confirmLabel="Encerrar"
+        destructive
+        onConfirm={confirmEncerrarAtividades}
+        onCancel={() => setConfirmEncerrar(false)}
+      />
     </div>
   )
 }

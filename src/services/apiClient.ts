@@ -15,6 +15,11 @@ export const api = axios.create({
   timeout: 10000,
 })
 
+export function resolveMediaUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path
+  return `${api.defaults.baseURL ?? ''}${path}`
+}
+
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken')
   if (token) {
