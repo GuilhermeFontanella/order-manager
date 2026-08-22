@@ -75,6 +75,33 @@ export async function getMesaCardapio(tenantSlug: string, qrCodeToken: string): 
   }
 }
 
+export type CategoriaStorefront = {
+  id: string
+  nome: string
+  tipo: 'COMIDA' | 'BEBIDA' | 'BEBIDA_ALCOOLICA'
+  ativa: boolean
+}
+
+export async function getMesaCategorias(tenantSlug: string): Promise<CategoriaStorefront[]> {
+  const response = await api.get<CategoriaStorefront[]>(`/r/${tenantSlug}/categorias`)
+  return response.data
+}
+
+export type BuscarProdutosFiltros = {
+  search?: string
+  categoriaId?: string
+}
+
+export async function buscarProdutosCardapio(tenantSlug: string, filtros: BuscarProdutosFiltros): Promise<Category[]> {
+  const response = await api.get<unknown>(`/r/${tenantSlug}/produtos`, {
+    params: {
+      search: filtros.search || undefined,
+      categoriaId: filtros.categoriaId || undefined,
+    },
+  })
+  return normalizeCategories(response.data)
+}
+
 export type PedidoCriado = Pedido & { confirmacaoToken: string }
 
 export async function createPedido(tenantSlug: string, payload: CreatePedidoPayload): Promise<PedidoCriado> {

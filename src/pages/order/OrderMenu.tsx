@@ -6,17 +6,23 @@ import CartBar from '../../components/CartBar'
 import CartDrawer from '../../components/CartDrawer'
 import bgMenu from '../../assets/bgmenu.webp'
 import { readMesaSession, clearMesaSession } from '../../lib/mesaSession'
-import { getMesaCardapio, type Mesa } from '../../services/storefront'
+import { getMesaCardapio, getMesaCategorias, buscarProdutosCardapio, type Mesa, type CategoriaStorefront } from '../../services/storefront'
 import type { Category } from '../../data/menu'
 
 export default function OrderMenu() {
   const navigate = useNavigate()
+  const [tenantSlug, setTenantSlug] = useState<string | null>(null)
+  const [categorias, setCategorias] = useState<CategoriaStorefront[]>([])
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState<string | null>(null)
   const [mesa, setMesa] = useState<Mesa | null>(null)
   const [cardapio, setCardapio] = useState<Category[]>([])
+  const [displayCategories, setDisplayCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(() => !!readMesaSession())
+  const [searching, setSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const menuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -27,10 +33,16 @@ export default function OrderMenu() {
 
     async function loadMesa() {
       try {
-        const { mesa: mesaData, cardapio: cardapioData } = await getMesaCardapio(session!.tenantSlug, session!.qrCodeToken)
+        const [data, { mesa: mesaData, cardapio: cardapioData }] = await Promise.all([
+          getMesaCategorias(session!.tenantSlug),
+          getMesaCardapio(session!.tenantSlug, session!.qrCodeToken),
+        ])
         if (!isMounted) return
+        setTenantSlug(session!.tenantSlug)
         setMesa(mesaData)
+        setCategorias(data)
         setCardapio(cardapioData)
+        setDisplayCategories(cardapioData)
       } catch {
         if (!isMounted) return
         clearMesaSession()
@@ -46,6 +58,40 @@ export default function OrderMenu() {
       isMounted = false
     }
   }, [])
+
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(handle)
+  }, [search])
+
+  useEffect(() => {
+    if (!tenantSlug) return
+
+    const termo = debouncedSearch.trim()
+    if (!termo && !categoriaSelecionada) {
+      setDisplayCategories(cardapio)
+      setSearching(false)
+      return
+    }
+
+    let isMounted = true
+    setSearching(true)
+
+    buscarProdutosCardapio(tenantSlug, { search: termo, categoriaId: categoriaSelecionada ?? undefined })
+      .then(resultado => {
+        if (isMounted) setDisplayCategories(resultado)
+      })
+      .catch(() => {
+        if (isMounted) setDisplayCategories([])
+      })
+      .finally(() => {
+        if (isMounted) setSearching(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [tenantSlug, debouncedSearch, categoriaSelecionada, cardapio])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -152,14 +198,44 @@ export default function OrderMenu() {
                 id="menu-search"
                 value={search}
                 onChange={event => setSearch(event.target.value)}
-                placeholder="Buscar no cardápio..."
+                placeholder="Buscar por nome, descrição ou ingrediente..."
                 className="w-full rounded-3xl border border-slate-200 bg-white px-12 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               />
             </div>
           </div>
+
+          {categorias.length > 0 ? (
+            <div className="mt-4 flex gap-2 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setCategoriaSelecionada(null)}
+                className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                  categoriaSelecionada === null
+                    ? 'bg-emerald-700 text-white'
+                    : 'bg-white text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                Todas
+              </button>
+              {categorias.map(categoria => (
+                <button
+                  key={categoria.id}
+                  type="button"
+                  onClick={() => setCategoriaSelecionada(prev => (prev === categoria.id ? null : categoria.id))}
+                  className={`shrink-0 cursor-pointer rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition ${
+                    categoriaSelecionada === categoria.id
+                      ? 'bg-emerald-700 text-white'
+                      : 'bg-white text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {categoria.nome}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </header>
 
-        <MenuSections search={search} categories={cardapio} loading={loading} />
+        <MenuSections categories={displayCategories} loading={loading || searching} />
       </div>
 
       <CartBar onOpen={() => setCartOpen(true)} />

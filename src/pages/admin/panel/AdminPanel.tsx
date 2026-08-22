@@ -16,6 +16,11 @@ const SECTION_TITLES: Record<string, string> = {
   pedidos: 'Pedidos',
   equipe: 'Equipe',
   configuracoes: 'Configurações',
+  'dados-restaurante': 'Dados do restaurante',
+  aparencia: 'Aparência',
+  pagamento: 'Pagamento',
+  mesas: 'Mesas',
+  conta: 'Conta',
 }
 
 function useIsMobile() {

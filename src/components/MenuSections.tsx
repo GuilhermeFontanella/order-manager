@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Category, Item } from '../data/menu';
 import ProductCard from './ProductCard'
 import ItemSheet from './ItemSheet'
@@ -6,12 +6,11 @@ import { useCart } from '../context/CartContext'
 import DetailsSheet from './DetailsSheet';
 
 type Props = {
-  search?: string
   categories: Category[]
   loading?: boolean
 }
 
-export default function MenuSections({ search = '', categories, loading = false }: Props) {
+export default function MenuSections({ categories, loading = false }: Props) {
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -37,22 +36,10 @@ export default function MenuSections({ search = '', categories, loading = false 
   const [selected, setSelected] = useState<Item | null>(null)
   const { add } = useCart()
 
-  const normalizedSearch = search.trim().toLowerCase()
-  const filteredMenu = useMemo(() => {
-    if (!normalizedSearch) return categories
-    return categories.map(cat => ({
-      ...cat,
-      itens: cat.itens.filter(item =>
-        item.nome.toLowerCase().includes(normalizedSearch) ||
-        item.desc?.toLowerCase().includes(normalizedSearch)
-      )
-    })).filter(cat => cat.itens.length > 0)
-  }, [categories, normalizedSearch])
-
   return (
     <div>
       <div ref={tabsRef} className="flex gap-2 overflow-x-auto py-2 px-4 -mx-4">
-        {filteredMenu.map((cat, idx) => (
+        {categories.map((cat, idx) => (
           <button
             key={cat.id}
             className={`cursor-pointer inline-flex items-center rounded-4xl bg-amber-50 px-2 py-2 text-xs font-medium text-gray-600 inset-ring inset-ring-gray-500/10 hover:bg-gray-200 ${idx === 0 ? 'active' : ''} shadow-sm`}
@@ -69,12 +56,12 @@ export default function MenuSections({ search = '', categories, loading = false 
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
             Carregando cardápio...
           </div>
-        ) : filteredMenu.length === 0 ? (
+        ) : categories.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
             Nenhum item encontrado para sua busca.
           </div>
         ) : (
-          filteredMenu.map((cat: Category) => (
+          categories.map((cat: Category) => (
             <section id={'sec-' + cat.id} key={cat.id} className="mb-6 mt-6" aria-labelledby={`title-${cat.id}`}>
               <h2 id={`title-${cat.id}`} className="font-bold text-lg mb-4 text-left">{cat.nome}</h2>
               <div className="grid gap-3 mt-4">

@@ -18,7 +18,11 @@ import CardapioSection from '../pages/admin/panel/sections/CardapioSection'
 import EstoqueSection from '../pages/admin/panel/sections/EstoqueSection'
 import PedidosSection from '../pages/admin/panel/sections/PedidosSection'
 import EquipeSection from '../pages/admin/panel/sections/EquipeSection'
-import ConfiguracoesSection from '../pages/admin/panel/sections/ConfiguracoesSection'
+import DadosRestauranteSection from '../pages/admin/panel/sections/configuracoes/DadosRestauranteSection'
+import AparenciaSection from '../pages/admin/panel/sections/configuracoes/AparenciaSection'
+import PagamentoSection from '../pages/admin/panel/sections/configuracoes/PagamentoSection'
+import MesasConfigSection from '../pages/admin/panel/sections/configuracoes/MesasConfigSection'
+import ContaSection from '../pages/admin/panel/sections/configuracoes/ContaSection'
 
 export function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
   if (!isAuthenticated) {
@@ -134,7 +138,14 @@ export function AppRoutes() {
           <Route path="estoque" element={<EstoqueSection />} />
           <Route path="pedidos" element={<PedidosSection />} />
           <Route path="equipe" element={<EquipeSection />} />
-          <Route path="configuracoes" element={<ConfiguracoesSection />} />
+          <Route path="configuracoes">
+            <Route index element={<Navigate to="dados-restaurante" replace />} />
+            <Route path="dados-restaurante" element={<DadosRestauranteSection />} />
+            <Route path="aparencia" element={<AparenciaSection />} />
+            <Route path="pagamento" element={<PagamentoSection />} />
+            <Route path="mesas" element={<MesasConfigSection />} />
+            <Route path="conta" element={<ContaSection />} />
+          </Route>
         </Route>
 
         <Route

@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -16,7 +16,18 @@ const NAV_ITEMS = [
   { to: '/admin/estoque', label: 'Estoque', icon: Package },
   { to: '/admin/pedidos', label: 'Pedidos', icon: Receipt },
   { to: '/admin/equipe', label: 'Equipe', icon: Users },
-  { to: '/admin/configuracoes', label: 'Configurações', icon: Settings },
+  {
+    to: '/admin/configuracoes',
+    label: 'Configurações',
+    icon: Settings,
+    children: [
+      { to: '/admin/configuracoes/dados-restaurante', label: 'Dados do restaurante' },
+      { to: '/admin/configuracoes/aparencia', label: 'Aparência' },
+      { to: '/admin/configuracoes/pagamento', label: 'Pagamento' },
+      { to: '/admin/configuracoes/mesas', label: 'Mesas' },
+      { to: '/admin/configuracoes/conta', label: 'Conta' },
+    ],
+  },
 ]
 
 export default function Sidebar({
@@ -34,6 +45,7 @@ export default function Sidebar({
   onNavigate: () => void
   onToggleCollapse: () => void
 }) {
+  const location = useLocation()
   const showLabels = isMobile || !collapsed
   const className = [
     'ap-sidebar',
@@ -58,19 +70,36 @@ export default function Sidebar({
       <nav className="ap-nav">
         {NAV_ITEMS.map(item => {
           const Icon = item.icon
+          const isParentActive = location.pathname.startsWith(item.to)
           return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={onNavigate}
-              title={item.label}
-              className={({ isActive }) => `ap-nav-item${isActive ? ' is-active' : ''}`}
-            >
-              <span className="ap-nav-item-icon">
-                <Icon size={17} />
-              </span>
-              {showLabels && <span className="ap-nav-item-label">{item.label}</span>}
-            </NavLink>
+            <div key={item.to} className="ap-nav-group">
+              <NavLink
+                to={item.to}
+                onClick={item.children ? undefined : onNavigate}
+                title={item.label}
+                className={({ isActive }) => `ap-nav-item${isActive ? ' is-active' : ''}`}
+              >
+                <span className="ap-nav-item-icon">
+                  <Icon size={17} />
+                </span>
+                {showLabels && <span className="ap-nav-item-label">{item.label}</span>}
+              </NavLink>
+
+              {item.children && showLabels && isParentActive && (
+                <div className="ap-nav-submenu">
+                  {item.children.map(child => (
+                    <NavLink
+                      key={child.to}
+                      to={child.to}
+                      onClick={onNavigate}
+                      className={({ isActive }) => `ap-nav-subitem${isActive ? ' is-active' : ''}`}
+                    >
+                      {child.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
           )
         })}
       </nav>

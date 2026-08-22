@@ -50,25 +50,31 @@ export function normalizeCategories(payload: unknown): Category[] {
       }))
     }
 
-    const grouped = new Map<string, Item[]>()
+    const grouped = new Map<string, { nome: string; itens: Item[] }>()
 
     for (const entry of payload as Array<Record<string, unknown>>) {
-      const categoryName = asText(entry.categoria) ?? asText(entry.category) ?? asText(entry.categoriaNome) ?? asText(entry.categoryName) ?? 'Geral'
-      const categoryId = asText(entry.categoriaId) ?? asText(entry.categoryId) ?? categoryName.toLowerCase().normalize('NFD').replace(/[^\w\s]/g, '').replace(/\s+/g, '-')
+      const categoriaRaw = entry.categoria
+      const categoriaObj = categoriaRaw && typeof categoriaRaw === 'object' ? (categoriaRaw as Record<string, unknown>) : undefined
+
+      const categoryName =
+        (categoriaObj ? asText(categoriaObj.nome) : asText(categoriaRaw)) ??
+        asText(entry.category) ?? asText(entry.categoriaNome) ?? asText(entry.categoryName) ?? 'Geral'
+      const categoryId =
+        (categoriaObj ? asText(categoriaObj.id) : undefined) ??
+        asText(entry.categoriaId) ?? asText(entry.categoryId) ??
+        categoryName.toLowerCase().normalize('NFD').replace(/[^\w\s]/g, '').replace(/\s+/g, '-')
       const item = normalizeItem(entry)
 
-      const existing = grouped.get(categoryName)
+      const existing = grouped.get(categoryId)
       if (existing) {
-        existing.push(item)
+        existing.itens.push(item)
       } else {
-        grouped.set(categoryName, [item])
+        grouped.set(categoryId, { nome: categoryName, itens: [item] })
       }
-
-      if (!categoryId) continue
     }
 
-    return Array.from(grouped.entries()).map(([nome, itens], index) => ({
-      id: `categoria-${index + 1}`,
+    return Array.from(grouped.entries()).map(([id, { nome, itens }]) => ({
+      id,
       nome,
       itens,
     }))
