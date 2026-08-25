@@ -620,6 +620,79 @@
   vertical-align: middle;
 }
 
+/* ---------- Status badge (Pedidos) ---------- */
+.ap-badge-status {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 100px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.ap-badge-status-aguardando_pagamento {
+  color: var(--ap-gold-dark);
+  background: var(--ap-gold-soft);
+}
+.ap-badge-status-preparando {
+  color: var(--ap-blue-dark);
+  background: var(--ap-blue-tint);
+}
+.ap-badge-status-pronto {
+  color: var(--ap-green-dark);
+  background: var(--ap-green-tint);
+}
+.ap-badge-status-retirado {
+  color: var(--ap-ink-soft);
+  background: var(--ap-border-soft);
+}
+.ap-badge-status-cancelado {
+  color: var(--ap-red);
+  background: var(--ap-red-tint);
+}
+
+/* ---------- Pagination (Pedidos) ---------- */
+.ap-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+.ap-pagination-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ap-border);
+  background: var(--ap-surface);
+  color: var(--ap-ink-soft);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ap-pagination-btn:hover:not(:disabled) {
+  color: var(--ap-ink);
+  border-color: var(--ap-ink-faint);
+}
+.ap-pagination-btn.is-active {
+  background: var(--ap-green);
+  border-color: var(--ap-green);
+  color: #fff;
+}
+.ap-pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ap-pagination-ellipsis {
+  color: var(--ap-ink-faint);
+  font-size: 12.5px;
+  padding: 0 2px;
+}
+
 /* ---------- Nested editors (Cardápio: grupos de opção / insumos) ---------- */
 .ap-subcard {
   background: var(--ap-surface-alt);
