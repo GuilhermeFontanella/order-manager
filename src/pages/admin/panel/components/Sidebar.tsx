@@ -60,7 +60,7 @@ export default function Sidebar({
       <div className="ap-sidebar-header">
         <div className="ap-sidebar-logo">{brandName.charAt(0).toUpperCase()}</div>
         {showLabels && (
-          <div className="ap-sidebar-brand">
+          <div className="ap-sidebar-brand text-left">
             <div className="ap-sidebar-brand-name">{brandName}</div>
             <div className="ap-sidebar-brand-tag">Gestão interna</div>
           </div>

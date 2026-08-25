@@ -7,6 +7,7 @@ interface AuthContextType {
   user: AuthUser | null
   login: (token: string, user: AuthUser) => void
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -42,6 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(false)
   }
 
+  const refreshUser = async () => {
+    const freshUser = await getMe()
+    localStorage.setItem('user', JSON.stringify(freshUser))
+    setUser(freshUser)
+  }
+
   useEffect(() => {
     if (!isAuthenticated) return
 
@@ -58,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

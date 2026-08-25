@@ -73,7 +73,7 @@ export default function AparenciaSection() {
               </div>
 
               <div className="ap-field text-left">
-                <span className="ap-field-label">Fotos do restaurante</span>
+                <span className="ap-field-label">Logo</span>
                 <div className="ap-photo-grid">
                   {fotos.map((foto, index) => (
                     <div key={foto} className="ap-photo-thumb">

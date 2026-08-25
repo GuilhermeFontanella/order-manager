@@ -1,16 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../../../../context/AuthContext'
-import SettingsSaveBar from '../../components/SettingsSaveBar'
+import { getApiErrorMessage } from '../../../../../services/apiClient'
+import { getConfiguracaoRestaurante, type HorarioDia } from '../../../../../services/storefront'
+import { updateConfiguracaoRestaurante } from '../../../../../services/configuracaoRestaurante'
 import { useSavedFlag } from '../../hooks/useSavedFlag'
 
-type HorarioDia = {
-  dia: string
-  aberto: boolean
-  abre: string
-  fecha: string
-}
-
-const HORARIOS_INICIAIS: HorarioDia[] = [
+const HORARIOS_PADRAO: HorarioDia[] = [
   { dia: 'Segunda-feira', aberto: true, abre: '11:00', fecha: '23:00' },
   { dia: 'Terça-feira', aberto: true, abre: '11:00', fecha: '23:00' },
   { dia: 'Quarta-feira', aberto: true, abre: '11:00', fecha: '23:00' },
@@ -21,25 +16,71 @@ const HORARIOS_INICIAIS: HorarioDia[] = [
 ]
 
 export default function DadosRestauranteSection() {
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { saved, trigger } = useSavedFlag()
 
-  const [nome, setNome] = useState(user?.tenant?.nome ?? '')
-  const [descricao, setDescricao] = useState(
-    'Botequim de bairro com petiscos, chopp gelado e aquele clima de encontro entre amigos.'
-  )
-  const [historia, setHistoria] = useState(
-    'Fundado em 2015 por um grupo de amigos apaixonados por boa comida e cerveja artesanal, o Botequim do Zé nasceu num quintal e virou ponto de encontro do bairro.'
-  )
-  const [horarios, setHorarios] = useState(HORARIOS_INICIAIS)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const [nome, setNome] = useState('')
+  const [descricao, setDescricao] = useState('')
+  const [historia, setHistoria] = useState('')
+  const [horarios, setHorarios] = useState<HorarioDia[]>(HORARIOS_PADRAO)
+
+  useEffect(() => {
+    if (!user?.tenant?.slug) return
+    let isMounted = true
+    getConfiguracaoRestaurante(user.tenant.slug)
+      .then(config => {
+        if (!isMounted) return
+        setNome(config.nome)
+        setDescricao(config.descricao ?? '')
+        setHistoria(config.historia ?? '')
+        setHorarios(config.horarios ?? HORARIOS_PADRAO)
+      })
+      .catch(() => {
+        if (isMounted) setError('Não foi possível carregar os dados do restaurante.')
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [user?.tenant?.slug])
 
   function updateHorario(index: number, patch: Partial<HorarioDia>) {
     setHorarios(prev => prev.map((h, i) => (i === index ? { ...h, ...patch } : h)))
   }
 
+  async function handleSave() {
+    setSaving(true)
+    setError(null)
+    try {
+      await updateConfiguracaoRestaurante({ nome, descricao, historia, horarios })
+      await refreshUser()
+      trigger()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Não foi possível salvar os dados do restaurante.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return <p className="ap-card-sub">Carregando dados do restaurante...</p>
+  }
+
   return (
     <div className="ap-settings-stack">
-      <div className="ap-card">
+      {error && (
+        <p className="ap-card" style={{ marginBottom: 16, color: 'var(--ap-red)' }}>
+          {error}
+        </p>
+      )}
+
+      <div className="ap-card text-left">
         <div className="ap-card-title">Informações gerais</div>
         <div className="ap-card-sub">Como o restaurante se apresenta para os clientes no cardápio digital.</div>
 
@@ -76,7 +117,7 @@ export default function DadosRestauranteSection() {
         </div>
       </div>
 
-      <div className="ap-card">
+      <div className="ap-card text-left">
         <div className="ap-card-title">Horário de funcionamento</div>
         <div className="ap-card-sub">Define o que aparece para o cliente e pode futuramente bloquear pedidos fora do horário.</div>
 
@@ -119,7 +160,14 @@ export default function DadosRestauranteSection() {
         ))}
       </div>
 
-      <SettingsSaveBar onSave={trigger} saved={saved} />
+      <div className="ap-group-header" style={{ marginTop: 20 }}>
+        <span className="ap-card-sub" style={{ margin: 0 }}>
+          {saved ? 'Alterações salvas.' : 'As alterações são exibidas no cardápio digital do restaurante.'}
+        </span>
+        <button type="button" className="ap-btn ap-btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Salvando...' : 'Salvar alterações'}
+        </button>
+      </div>
     </div>
   )
 }

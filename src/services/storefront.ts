@@ -102,6 +102,25 @@ export async function buscarProdutosCardapio(tenantSlug: string, filtros: Buscar
   return normalizeCategories(response.data)
 }
 
+export type HorarioDia = {
+  dia: string
+  aberto: boolean
+  abre: string
+  fecha: string
+}
+
+export type ConfiguracaoRestaurante = {
+  nome: string
+  descricao: string | null
+  historia: string | null
+  horarios: HorarioDia[] | null
+}
+
+export async function getConfiguracaoRestaurante(tenantSlug: string): Promise<ConfiguracaoRestaurante> {
+  const response = await api.get<ConfiguracaoRestaurante>(`/r/${tenantSlug}/restaurante`)
+  return response.data
+}
+
 export type PedidoCriado = Pedido & { confirmacaoToken: string }
 
 export async function createPedido(tenantSlug: string, payload: CreatePedidoPayload): Promise<PedidoCriado> {
