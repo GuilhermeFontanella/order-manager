@@ -93,6 +93,10 @@ export function ProtectedRoute({
     return <Navigate to="/login" replace />
   }
 
+  if (user?.mustChangePassword && window.location.pathname !== '/primeiro-acesso') {
+    return <Navigate to="/primeiro-acesso" replace />
+  }
+
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => role === user?.papel)
     if (!hasRequiredRole) {

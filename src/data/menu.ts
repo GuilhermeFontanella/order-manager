@@ -7,6 +7,7 @@ export type Item = {
   disponivel?: boolean
   grupos?: any[]
   fotos?: string[]
+  ingredientes?: string[]
 }
 
 export type Category = {

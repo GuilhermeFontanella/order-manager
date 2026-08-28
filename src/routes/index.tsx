@@ -23,6 +23,8 @@ import AparenciaSection from '../pages/admin/panel/sections/configuracoes/Aparen
 import PagamentoSection from '../pages/admin/panel/sections/configuracoes/PagamentoSection'
 import MesasConfigSection from '../pages/admin/panel/sections/configuracoes/MesasConfigSection'
 import ContaSection from '../pages/admin/panel/sections/configuracoes/ContaSection'
+import ChangePassword from '../pages/login/ChangePassword'
+import ResetPassword from '../pages/login/ResetPassword'
 
 export function resolveDefaultRoute(isAuthenticated: boolean, role: string | null) {
   if (!isAuthenticated) {
@@ -56,6 +58,9 @@ export function AppRoutes() {
           path="/"
           element={<Navigate to={defaultRoute} replace />}
         />
+
+        <Route path="/primeiro-acesso" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+        <Route path="/redefinir-senha" element={<ResetPassword />} />
 
         <Route
           path="/login"

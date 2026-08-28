@@ -46,6 +46,34 @@
   box-sizing: border-box;
 }
 
+.ap-section-intro, .ap-list-toolbar, .ap-user-row, .ap-modal-actions { display: flex; align-items: center; }
+.ap-section-intro { justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+.ap-inline-error { margin: 0 0 16px; color: var(--ap-red); }
+.ap-list-toolbar { justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.ap-search { display: flex; align-items: center; gap: 8px; width: min(360px, 100%); border: 1px solid var(--ap-border); border-radius: 10px; padding: 9px 11px; color: var(--ap-ink-faint); }
+.ap-search input { width: 100%; border: 0; outline: 0; background: transparent; font: inherit; color: var(--ap-ink); }
+.ap-user-list { display: flex; flex-direction: column; }
+.ap-user-row { gap: 12px; padding: 14px 0; border-top: 1px solid var(--ap-border-soft); }
+.ap-user-avatar, .ap-credential-icon { display: grid; place-items: center; border-radius: 10px; background: var(--ap-green-tint); color: var(--ap-green); }
+.ap-user-avatar { flex: 0 0 34px; height: 34px; }
+.ap-user-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.ap-user-main strong { font-size: 13px; }
+.ap-user-main span { overflow: hidden; text-overflow: ellipsis; color: var(--ap-ink-soft); font-size: 12px; }
+.ap-role-badge, .ap-first-access { white-space: nowrap; border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 700; }
+.ap-role-badge { background: var(--ap-blue-tint); color: var(--ap-blue-dark); }
+.ap-first-access { display: inline-flex; align-items: center; gap: 4px; background: var(--ap-gold-soft); color: var(--ap-gold-dark); }
+.ap-status { border: 0; border-radius: 999px; padding: 5px 9px; background: var(--ap-red-tint); color: var(--ap-red); cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; }
+.ap-status.is-active { background: var(--ap-green-tint); color: var(--ap-green); }
+.ap-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(20, 18, 15, .45); }
+.ap-modal { width: min(100%, 440px); display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 16px; background: var(--ap-surface); box-shadow: var(--ap-shadow-md); }
+.ap-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; }
+.ap-field input, .ap-field select { border: 1px solid var(--ap-border); border-radius: 9px; padding: 10px 11px; background: var(--ap-surface-alt); color: var(--ap-ink); font: inherit; outline: 0; }
+.ap-modal-actions { justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.ap-credential-modal { align-items: center; text-align: center; }
+.ap-credential-icon { width: 42px; height: 42px; }
+.ap-temporary-password { width: 100%; padding: 14px; border: 1px dashed var(--ap-gold); border-radius: 10px; background: var(--ap-gold-soft); color: var(--ap-gold-dark); font-family: var(--ap-font-mono); font-size: 20px; font-weight: 700; letter-spacing: .08em; }
+@media (max-width: 640px) { .ap-section-intro, .ap-user-row { align-items: flex-start; flex-wrap: wrap; } .ap-role-badge, .ap-first-access, .ap-status { margin-left: 46px; } }
+
 /* ---------- Overlay (drawer mobile) ---------- */
 .ap-overlay {
   position: fixed;
@@ -339,6 +367,14 @@
   color: #fff;
 }
 
+.ap-custom-period { position: relative; }
+.ap-custom-period-trigger { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; }
+.ap-custom-period-popover { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; display: grid; gap: 12px; width: 230px; padding: 14px; border: 1px solid var(--ap-border); border-radius: 12px; background: var(--ap-surface); box-shadow: var(--ap-shadow-md); }
+.ap-custom-period-popover label { display: grid; gap: 5px; color: var(--ap-ink-soft); font-size: 11px; font-weight: 700; }
+.ap-custom-period-popover input { width: 100%; border: 1px solid var(--ap-border); border-radius: 8px; padding: 8px; background: var(--ap-surface-alt); color: var(--ap-ink); font: inherit; }
+.ap-custom-period-clear { border: 0; padding: 0; background: transparent; color: var(--ap-red); cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; text-align: left; }
+@media (max-width: 640px) { .ap-custom-period-popover { right: auto; left: 0; } }
+
 /* ---------- Stat cards ---------- */
 .ap-stat-grid {
   display: grid;
@@ -618,6 +654,62 @@
   border-radius: 100px;
   padding: 2px 8px;
   vertical-align: middle;
+}
+
+/* ---------- Status badge (Pedidos) ---------- */
+.ap-badge-status {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 100px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.ap-badge-status-aguardando_pagamento {
+  color: var(--ap-gold-dark);
+  background: var(--ap-gold-soft);
+}
+.ap-badge-status-preparando {
+  color: var(--ap-blue-dark);
+  background: var(--ap-blue-tint);
+}
+.ap-badge-status-pronto {
+  color: var(--ap-green-dark);
+  background: var(--ap-green-tint);
+}
+.ap-badge-status-retirado {
+  color: var(--ap-ink-soft);
+  background: var(--ap-border-soft);
+}
+.ap-badge-status-cancelado {
+  color: var(--ap-red);
+  background: var(--ap-red-tint);
+}
+
+/* ---------- Pagination (Pedidos) ---------- */
+.ap-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.ap-pagination-info {
+  font-size: 11.5px;
+  color: var(--ap-ink-faint);
+}
+.ap-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ap-pagination-page {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ap-ink-soft);
+  min-width: 48px;
+  text-align: center;
 }
 
 /* ---------- Nested editors (Cardápio: grupos de opção / insumos) ---------- */

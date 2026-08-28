@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Beer, DollarSign, Receipt, Ticket } from 'lucide-react'
 import { fmt } from '../../../../data/menu'
 import PeriodFilter from '../components/PeriodFilter'
@@ -6,75 +6,85 @@ import StatCard from '../components/StatCard'
 import BarChart from '../components/BarChart'
 import CategoryBreakdown from '../components/CategoryBreakdown'
 import RankedList from '../components/RankedList'
-import {
-  CATEGORY_SHARE,
-  getComparativo,
-  getPeakHoursChart,
-  getRevenueChart,
-  getStatsForPeriod,
-  PERIOD_LABEL,
-  TOP_INSUMOS,
-  TOP_PRATOS,
-  type PeriodId,
-} from '../mock/dashboardMock'
+import { getDashboard, PERIOD_LABEL, type DashboardResponse, type PeriodId } from '../../../../services/dashboard'
+
+function toCents(value: string | number) {
+  return Math.round(Number(value) * 100)
+}
+
+function seriesLabel(value: string, period: PeriodId) {
+  const date = new Date(value)
+  if (period === 'hoje' || period === 'ontem') return `${String(date.getHours()).padStart(2, '0')}h`
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+}
 
 export default function DashboardSection() {
   const [period, setPeriod] = useState<PeriodId>('hoje')
+  const [customRange, setCustomRange] = useState<{ dataInicio: string; dataFim: string } | null>(null)
+  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const stats = getStatsForPeriod(period)
-  const ticketMedio = stats.pedidos ? Math.round(stats.faturado / stats.pedidos) : 0
-  const comparativo = getComparativo(period)
-  const revenueChart = getRevenueChart(period)
-  const peakChart = getPeakHoursChart()
+  useEffect(() => {
+    let mounted = true
+    const hasIncompleteCustomRange = Boolean(
+      customRange && (!customRange.dataInicio || !customRange.dataFim),
+    )
 
-  const topPratos = TOP_PRATOS.map(item => {
-    const qtd = Math.max(1, Math.round(stats.pedidos * item.share))
-    return {
-      id: item.nome,
-      label: item.nome,
-      sublabel: `${qtd} vendidos`,
-      value: fmt(qtd * item.preco),
-      emphasize: true,
-    }
-  })
+    if (hasIncompleteCustomRange) return
 
-  const insumos = TOP_INSUMOS.map(item => ({
-    id: item.nome,
-    label: item.nome,
-    value: `${(stats.pedidos * item.perPedido).toFixed(1)} ${item.unidade}`,
-  }))
+    setLoading(true)
+    const completeRange = customRange?.dataInicio && customRange.dataFim
+      ? customRange
+      : undefined
+    getDashboard(period, completeRange)
+      .then(data => {
+        if (!mounted) return
+        setDashboard(data)
+        setError(null)
+      })
+      .catch(() => mounted && setError('Não foi possível carregar o dashboard.'))
+      .finally(() => mounted && setLoading(false))
+    return () => { mounted = false }
+  }, [period, customRange])
+
+  const revenueChart = dashboard?.serieTemporal ?? []
+  const categoryTotal = dashboard?.vendasPorCategoria.reduce((total, item) => total + toCents(item.valor), 0) ?? 0
+  const categoryRows = useMemo(() => dashboard?.vendasPorCategoria.map(item => ({ nome: item.nome, pct: categoryTotal ? Math.round(toCents(item.valor) / categoryTotal * 100) : 0 })) ?? [], [categoryTotal, dashboard])
+  const topPratos = dashboard?.pratosMaisVendidos.map(item => ({ id: item.produtoId, label: item.nome, sublabel: `${item.quantidade} vendidos`, value: fmt(toCents(item.valor)), emphasize: true })) ?? []
+  const stats = dashboard?.kpis
+
+  if (loading) return <p className="ap-card-sub">Carregando dashboard...</p>
+  if (!stats) return <p className="ap-card ap-inline-error">{error ?? 'Não foi possível carregar o dashboard.'}</p>
 
   return (
     <div>
-      <PeriodFilter value={period} onChange={setPeriod} />
+      <PeriodFilter value={period} onChange={selectedPeriod => { setCustomRange(null); setPeriod(selectedPeriod) }} customRange={customRange} isCustom={Boolean(customRange?.dataInicio && customRange.dataFim)} onCustomRangeChange={range => { setCustomRange(range); if (range?.dataInicio && range.dataFim) setPeriod('hoje') }} />
+      {error && <p className="ap-card ap-inline-error">{error}</p>}
 
       <div className="ap-stat-grid">
         <StatCard
           icon={DollarSign}
           label="Faturamento"
-          value={fmt(stats.faturado)}
-          deltaPct={comparativo}
+          value={fmt(toCents(stats.faturamento))}
           variant="green"
         />
         <StatCard
           icon={Receipt}
           label="Pedidos"
-          value={String(stats.pedidos)}
-          deltaPct={comparativo - 2}
+          value={String(stats.numeroPedidos)}
           variant="blue"
         />
         <StatCard
           icon={Ticket}
           label="Ticket médio"
-          value={fmt(ticketMedio)}
-          deltaPct={comparativo - 4}
+          value={fmt(toCents(stats.ticketMedio))}
           variant="gold"
         />
         <StatCard
           icon={Beer}
           label="Bebidas + cervejas"
-          value={String(Math.round(stats.pedidos * 0.41))}
-          deltaPct={comparativo + 3}
+          value={String(stats.bebidasVendidas)}
           variant="green"
         />
       </div>
@@ -85,25 +95,25 @@ export default function DashboardSection() {
           <div className="ap-card-sub">{PERIOD_LABEL[period]}</div>
           <BarChart
             variant="gold"
-            bars={revenueChart.map(b => ({
-              label: b.label,
-              value: b.faturado,
-              title: `${b.label} — ${fmt(b.faturado)}`,
+            bars={revenueChart.map(item => ({
+              label: seriesLabel(item.inicio, period),
+              value: toCents(item.faturamento),
+              title: `${seriesLabel(item.inicio, period)} — ${fmt(toCents(item.faturamento))}`,
             }))}
           />
         </div>
 
         <div className="ap-card">
           <div className="ap-card-title">Horários de pico</div>
-          <div className="ap-card-sub">Distribuição média de pedidos por hora</div>
+          <div className="ap-card-sub">Pedidos no período selecionado</div>
           <BarChart
             variant="green"
             height={150}
             gap={3}
-            bars={peakChart.map(b => ({
-              label: `${b.label}h`,
-              value: b.pedidos,
-              title: `${b.label}h — ${b.pedidos} pedidos em média`,
+            bars={revenueChart.map(item => ({
+              label: seriesLabel(item.inicio, period),
+              value: item.numeroPedidos,
+              title: `${seriesLabel(item.inicio, period)} — ${item.numeroPedidos} pedidos`,
             }))}
           />
         </div>
@@ -114,7 +124,7 @@ export default function DashboardSection() {
           <div className="ap-card-title" style={{ marginBottom: 12 }}>
             Vendas por categoria
           </div>
-          <CategoryBreakdown rows={CATEGORY_SHARE.map(c => ({ nome: c.nome, pct: Math.round(c.share * 100) }))} />
+          <CategoryBreakdown rows={categoryRows} />
         </div>
 
         <div className="ap-card">
@@ -124,12 +134,6 @@ export default function DashboardSection() {
           <RankedList rows={topPratos} />
         </div>
 
-        <div className="ap-card">
-          <div className="ap-card-title" style={{ marginBottom: 12 }}>
-            Consumo estimado de insumos
-          </div>
-          <RankedList rows={insumos} />
-        </div>
       </div>
     </div>
   )
