@@ -1,6 +1,12 @@
 import { motion } from 'framer-motion'
 import { useMemo, useState } from 'react'
 import type { Item } from '../data/menu'
+import { fmt } from '../data/menu'
+import OptionRow from './ember/OptionRow'
+import SegmentedControl from './ember/SegmentedControl'
+import QuantityStepper from './ember/QuantityStepper'
+import Button from './ember/Button'
+import Badge from './ember/Badge'
 
 type Props = {
   item: Item | null
@@ -37,120 +43,92 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
   const canAdd = !isOptionRequired || Boolean(selectedOption)
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="ember-theme fixed inset-0 z-50">
+      <div className="absolute inset-0" style={{ background: 'var(--glass-lo)' }} onClick={onClose} />
 
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl bg-white rounded-t-[28px] p-4 shadow-[0_24px_80px_rgba(15,23,42,0.12)] min-h-[470px] max-h-[calc(100vh-40px)] overflow-y-auto"
+        className="absolute left-1/2 -translate-x-1/2 bottom-0 w-full max-w-2xl p-4 min-h-117.5 max-h-[calc(100vh-40px)] overflow-y-auto"
+        style={{
+          borderTopLeftRadius: 'var(--r-sheet)', borderTopRightRadius: 'var(--r-sheet)',
+          background: 'var(--surface-sheet)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)',
+          boxShadow: 'var(--ring-inner), var(--shadow-sheet)',
+        }}
       >
         <div className="flex justify-center mb-4">
-          <div className="h-1.5 w-16 rounded-full bg-slate-200" />
+          <div className="h-1.5 w-16 rounded-full" style={{ background: 'var(--border-strong)' }} />
         </div>
 
-        <div className="flex flex-col gap-3 rounded-[32px] bg-slate-50 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
           <div className="flex gap-4 items-start">
-            <div className="w-16 h-16 rounded-[28px] bg-white border border-slate-200 flex items-center justify-center text-3xl">
+            <div
+              className="flex h-16 w-16 items-center justify-center text-3xl"
+              style={{ borderRadius: 'var(--r-image)', background: 'var(--ink-2)', boxShadow: 'var(--ring-inner)' }}
+            >
               {item.emoji ?? '🍽️'}
             </div>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-lg text-slate-900">{item.nome}</h3>
-              {item.desc && <p className="text-sm text-slate-600 mt-2 leading-relaxed">{item.desc}</p>}
+              <h3 style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{item.nome}</h3>
+              {item.desc && <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</p>}
             </div>
-            <div className="font-mono font-semibold text-green-700 text-right">R$ {(item.preco / 100).toFixed(2).replace('.', ',')}</div>
+            <div className="text-right" style={{ font: 'var(--text-title)', fontSize: 'var(--fs-price)', color: 'var(--text-price)' }}>{fmt(item.preco)}</div>
           </div>
         </div>
 
         {optionGroup ? (
-          <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mt-5 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
             <div className="flex items-center justify-between gap-3 text-left">
               <div>
-                <p className="text-sm font-semibold text-slate-900">{optionGroup.nome}</p>
-                <p className="text-xs text-slate-500 mt-1">Selecione uma opção para continuar.</p>
+                <p style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{optionGroup.nome}</p>
+                <p className="mt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Selecione uma opção para continuar.</p>
               </div>
-              {optionGroup.obrigatorio && (
-                <span className="rounded-full bg-rose-100 text-rose-700 px-3 py-1 text-[12px] font-semibold uppercase tracking-[0.14em]">
-                  Obrigatório
-                </span>
-              )}
+              {optionGroup.obrigatorio && <Badge tone="spicy">Obrigatório</Badge>}
             </div>
 
-            <div className="mt-4 space-y-3">
-              {optionGroup.opcoes.map((option: string) => (
-                <label
-                  key={option}
-                  className={`flex items-center gap-3 rounded-[25px] border p-3 text-sm transition ${
-                    selectedOption === option
-                      ? 'border-green-600 bg-green-50'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="item-option"
-                    value={option}
-                    checked={selectedOption === option}
-                    onChange={() => setSelectedOption(option)}
-                    className="h-4 w-4 accent-green-600"
-                  />
-                  <span className="text-sm text-slate-700">{option}</span>
-                </label>
-              ))}
+            <div className="mt-4">
+              <SegmentedControl
+                options={optionGroup.opcoes.map((o: string) => ({ value: o, label: o }))}
+                value={selectedOption}
+                onChange={setSelectedOption}
+              />
             </div>
           </div>
         ) : null}
 
-        <div className="mt-5 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label className="block text-sm font-semibold text-slate-900">Observação</label>
+        <div className="mt-5 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
+          <label style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>Observação</label>
           <textarea
             value={obs}
             onChange={event => setObs(event.target.value)}
             placeholder="Ex: sem cebola, ponto da carne..."
-            className="mt-3 min-h-[120px] w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-green-400 focus:bg-white"
+            className="mt-3 min-h-30 w-full px-4 py-3 outline-none transition"
+            style={{
+              borderRadius: 'var(--r-md)', background: 'var(--ink-2)', color: 'var(--text-primary)',
+              font: 'var(--text-body)', boxShadow: 'var(--ring-inner)',
+            }}
           />
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-4 rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm">
-          <div>
-            <p className="text-sm text-slate-600">Quantidade</p>
-            <p className="text-xs text-slate-400 mt-1">Escolha a quantidade do item</p>
-          </div>
-          <div className="flex items-center gap-3 rounded-full bg-slate-100 px-2 py-2">
-            <button
-              type="button"
-              onClick={() => setQty(Math.max(1, qty - 1))}
-              className="h-10 w-10 rounded-full bg-white text-lg text-slate-700 shadow-sm"
-            >
-              −
-            </button>
-            <span className="min-w-[34px] text-center text-sm font-semibold text-slate-900">{qty}</span>
-            <button
-              type="button"
-              onClick={() => setQty(qty + 1)}
-              className="h-10 w-10 rounded-full bg-white text-lg text-slate-700 shadow-sm"
-            >
-              +
-            </button>
-          </div>
+        <div className="mt-5 rounded-3xl p-4">
+          <OptionRow
+            label="Quantidade"
+            control={<QuantityStepper value={qty} onChange={setQty} />}
+          />
         </div>
 
-        <button
-          type="button"
-          disabled={!canAdd}
+        <Button
+          fullWidth size="lg" disabled={!canAdd}
           onClick={() => {
             if (!canAdd) return
             onAdd(item, qty, obs)
             onClose()
           }}
-          className={`mt-5 w-full rounded-[28px] px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
-            canAdd ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
-          }`}
         >
           {canAdd ? 'Adicionar ao pedido' : 'Selecione as opções obrigatórias'}
-        </button>
+        </Button>
       </motion.div>
     </div>
   )

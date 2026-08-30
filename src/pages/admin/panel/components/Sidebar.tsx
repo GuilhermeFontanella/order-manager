@@ -62,7 +62,7 @@ export default function Sidebar({
         {showLabels && (
           <div className="ap-sidebar-brand text-left">
             <div className="ap-sidebar-brand-name">{brandName}</div>
-            <div className="ap-sidebar-brand-tag">Gestão interna</div>
+            <div className="ap-sidebar-brand-tag mt-2">Gestão interna</div>
           </div>
         )}
       </div>

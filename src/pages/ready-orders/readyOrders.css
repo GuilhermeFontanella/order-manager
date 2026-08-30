@@ -1,77 +1,76 @@
-.ro-page{
-  --ro-green-dark: #1E3D2E;
-  --ro-green-darker: #142B20;
-  --ro-green-light: #3F7358;
-  --ro-gold: #C79A56;
-  --ro-gold-soft: #F4E9D4;
-  --ro-ink-faint: rgba(255,255,255,0.55);
-
+.ro-page {
   min-height: 100vh;
-  display: flex; flex-direction: column;
-  background: linear-gradient(180deg, var(--ro-green-dark), var(--ro-green-darker));
-  color: #fff;
-  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-core);
   text-align: left;
 }
-.ro-page *{ box-sizing: border-box; }
+.ro-page * { box-sizing: border-box; }
 
-.ro-header{
-  display: flex; align-items: center; justify-content: space-between;
+.ro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 24px 40px;
 }
-.ro-brand{ display: flex; align-items: center; gap: 14px; }
-.ro-brand-mark{
-  width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.12);
+.ro-brand { display: flex; align-items: center; gap: 14px; }
+.ro-brand-mark {
+  width: 46px; height: 46px; border-radius: var(--r-md);
+  background: var(--gradient-cta);
   display: flex; align-items: center; justify-content: center; font-size: 22px;
 }
-.ro-brand-text .ro-name{ font-weight: 800; font-size: 18px; }
-.ro-brand-text .ro-sub{ font-size: 12.5px; color: var(--ro-ink-faint); letter-spacing: 0.03em; }
-.ro-clock{ font-family: var(--mono); font-size: 20px; color: rgba(255,255,255,0.85); }
+.ro-brand-text .ro-name { font: var(--text-title); font-weight: 800; color: var(--text-primary); }
+.ro-brand-text .ro-sub { font: var(--text-caption); color: var(--text-muted); letter-spacing: 0.03em; }
+.ro-clock { display: flex; align-items: center; gap: var(--sp-4); font-family: var(--font-mono); font-size: 20px; color: var(--text-secondary); }
 
-.ro-main{ flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 40px 40px; gap: 40px; }
+.ro-main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 40px 40px; gap: 40px; }
 
-.ro-call-card{
-  width: 100%; max-width: 900px; border-radius: 32px;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+.ro-call-card {
+  width: 100%; max-width: 900px; border-radius: var(--r-sheet);
+  background: var(--surface-sheet);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  box-shadow: var(--ring-inner), var(--shadow-card);
   padding: 48px; text-align: center;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.25);
 }
-.ro-call-card.flash{ animation: roFlash 1.4s ease; }
-@keyframes roFlash{
-  0%{ box-shadow: 0 0 0 6px var(--ro-gold), 0 24px 60px rgba(0,0,0,0.25); background: rgba(199,154,86,0.18); }
-  100%{ box-shadow: 0 24px 60px rgba(0,0,0,0.25); background: rgba(255,255,255,0.06); }
-}
-
-.ro-call-bell{ font-size: 40px; }
-.ro-call-bell.ringing{ display: inline-block; animation: roRing 0.6s ease 3; }
-@keyframes roRing{ 0%,100%{ transform: rotate(0); } 20%{ transform: rotate(-15deg); } 40%{ transform: rotate(15deg); } 60%{ transform: rotate(-10deg); } 80%{ transform: rotate(10deg); } }
-
-.ro-call-label{ margin-top: 10px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ro-ink-faint); }
-.ro-call-senha{ margin-top: 14px; font-family: var(--mono); font-weight: 800; font-size: clamp(64px, 12vw, 128px); line-height: 1; color: var(--ro-gold); }
-.ro-call-nome{ margin-top: 8px; font-size: clamp(22px, 3.5vw, 36px); font-weight: 800; }
-.ro-call-mesa{ margin-top: 6px; font-size: clamp(16px, 2vw, 20px); color: rgba(255,255,255,0.75); }
-.ro-call-time{ margin-top: 14px; font-size: 13px; color: var(--ro-ink-faint); }
-
-.ro-idle{ font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; color: rgba(255,255,255,0.8); }
-
-.ro-section-label{
-  width: 100%; max-width: 1100px; font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--ro-ink-faint); text-align: center;
+.ro-call-card.flash { animation: roFlash 1.4s ease; }
+@keyframes roFlash {
+  0% { box-shadow: 0 0 0 6px var(--accent), var(--shadow-card); background: var(--accent-soft); }
+  100% { box-shadow: var(--ring-inner), var(--shadow-card); background: var(--surface-sheet); }
 }
 
-.ro-grid{
+.ro-call-bell { font-size: 40px; }
+.ro-call-bell.ringing { display: inline-block; animation: roRing 0.6s ease 3; }
+@keyframes roRing { 0%,100% { transform: rotate(0); } 20% { transform: rotate(-15deg); } 40% { transform: rotate(15deg); } 60% { transform: rotate(-10deg); } 80% { transform: rotate(10deg); } }
+
+.ro-call-label { margin-top: 10px; font: var(--text-label); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.ro-call-senha { margin-top: 14px; font-family: var(--font-mono); font-weight: 800; font-size: clamp(64px, 12vw, 128px); line-height: 1; color: var(--accent-quiet); }
+.ro-call-nome { margin-top: 8px; font-size: clamp(22px, 3.5vw, 36px); font-weight: 800; color: var(--text-primary); }
+.ro-call-mesa { margin-top: 6px; font-size: clamp(16px, 2vw, 20px); color: var(--text-secondary); }
+.ro-call-time { margin-top: 14px; font: var(--text-label); color: var(--text-muted); }
+
+.ro-idle { font-size: clamp(20px, 2.6vw, 28px); font-weight: 700; color: var(--text-secondary); }
+
+.ro-section-label {
+  width: 100%; max-width: 1100px; font: var(--text-label); font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-muted); text-align: center;
+}
+
+.ro-grid {
   width: 100%; max-width: 1100px;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;
 }
-.ro-grid-empty{ text-align: center; color: var(--ro-ink-faint); font-size: 15px; }
+.ro-grid-empty { text-align: center; color: var(--text-muted); font: var(--text-body); }
 
-.ro-chip{
-  border-radius: 20px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+.ro-chip {
+  border-radius: var(--r-lg); background: var(--surface-card); box-shadow: var(--ring-inner);
   padding: 18px 10px; text-align: center;
 }
-.ro-chip-senha{ font-family: var(--mono); font-weight: 800; font-size: 30px; color: #fff; }
-.ro-chip-nome{ margin-top: 4px; font-size: 12.5px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ro-chip-senha { font-family: var(--font-mono); font-weight: 800; font-size: 30px; color: var(--text-primary); }
+.ro-chip-nome { margin-top: 4px; font: var(--text-caption); color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-@media (prefers-reduced-motion: reduce){
-  .ro-page *{ animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .ro-page * { animation: none !important; transition: none !important; }
 }

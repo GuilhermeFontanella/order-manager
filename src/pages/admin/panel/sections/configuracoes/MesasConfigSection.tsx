@@ -100,7 +100,7 @@ export default function MesasConfigSection() {
 
   return (
     <div className="ap-settings-stack" style={{ maxWidth: 'none' }}>
-      <div className="ap-card">
+      <div className="ap-card text-left">
         <div className="ap-group-header">
           <div>
             <div className="ap-card-title">Mesas</div>

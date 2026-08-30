@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import '../../styles/ember-theme.css'
 import './counter.css'
+import StaffThemeShell from '../../components/ember/StaffThemeShell'
 import CounterHeader from '../../components/counter/CounterHeader'
 import AdminNav from '../../components/counter/AdminNav'
 import type { CounterOrder } from '../../components/counter/types'
@@ -194,6 +196,7 @@ export default function Counter() {
   }
 
   return (
+    <StaffThemeShell>
     <div className="counter-page">
       <CounterHeader
         clock={new Date(now).toLocaleTimeString('pt-BR')}
@@ -239,5 +242,6 @@ export default function Counter() {
         onCancel={() => setConfirmEncerrar(false)}
       />
     </div>
+    </StaffThemeShell>
   )
 }

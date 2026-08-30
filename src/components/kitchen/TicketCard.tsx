@@ -1,3 +1,4 @@
+import { Check, RotateCcw, TriangleAlert } from 'lucide-react'
 import type { KitchenOrder } from './types'
 import type { AuthUser } from '../../services/auth'
 
@@ -65,12 +66,18 @@ export default function TicketCard({
         ))}
       </div>
 
-      {order.obs && <div className="kitchen-ticket-obs">⚠ {order.obs}</div>}
+      {order.obs && (
+        <div className="kitchen-ticket-obs">
+          <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
+          <span>{order.obs}</span>
+        </div>
+      )}
 
       {order.status === 'preparando' && (
         <div className="kitchen-ticket-actions">
           <button className="kitchen-btn-action finish" onClick={() => onFinalizarPreparo(order.id)}>
-            ✓ Terminar preparo
+            <Check className="h-4 w-4" />
+            Terminar preparo
           </button>
         </div>
       )}
@@ -112,7 +119,8 @@ export default function TicketCard({
                 onClick={() => onPegarDeVolta(order.id)}
                 disabled={!podeVoltar}
               >
-                ↺ Pegar de volta
+                <RotateCcw className="h-4 w-4" />
+                Pegar de volta
               </button>
             </div>
           </>

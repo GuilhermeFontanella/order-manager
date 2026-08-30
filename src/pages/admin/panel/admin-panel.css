@@ -1,37 +1,36 @@
-/* Fontes self-hosted (via @fontsource) — carregadas só quando o painel admin é montado. */
-@import '@fontsource/plus-jakarta-sans/400.css';
-@import '@fontsource/plus-jakarta-sans/500.css';
-@import '@fontsource/plus-jakarta-sans/600.css';
-@import '@fontsource/plus-jakarta-sans/700.css';
-@import '@fontsource/plus-jakarta-sans/800.css';
+/* Ember design system — tokens shared with the rest of the app. */
+@import '../../../styles/ember-theme.css';
 @import '@fontsource/ibm-plex-mono/500.css';
 @import '@fontsource/ibm-plex-mono/600.css';
 @import '@fontsource/ibm-plex-mono/700.css';
 
 .admin-panel-page {
-  --ap-bg: #F3EEE2;
-  --ap-surface: #FFFFFF;
-  --ap-surface-alt: #FBF8F1;
-  --ap-ink: #201E1A;
-  --ap-ink-soft: #79735F;
-  --ap-ink-faint: #A29C89;
-  --ap-border-soft: rgba(32, 30, 26, 0.09);
-  --ap-border: rgba(32, 30, 26, 0.12);
-  --ap-green: #2F5D46;
-  --ap-green-dark: #1E3D2E;
-  --ap-green-darker: #142B20;
-  --ap-green-tint: #E7EFE9;
-  --ap-gold: #C79A56;
-  --ap-gold-dark: #8C6A32;
-  --ap-gold-soft: #F4E9D4;
-  --ap-red: #BE5138;
-  --ap-red-tint: #F7E5DE;
-  --ap-blue-tint: #E5EEF3;
-  --ap-blue-dark: #2E5E73;
-  --ap-shadow-sm: 0 1px 2px rgba(32, 30, 26, 0.06);
-  --ap-shadow-md: 0 8px 22px rgba(32, 30, 26, 0.10);
-  --ap-font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --ap-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* ap-* names kept so every rule below (and every section .tsx file) needs no change —
+     only these source values were remapped, from a fixed light palette onto the shared
+     Ember tokens, which flip automatically between dark/light via [data-theme]. */
+  --ap-bg: var(--bg-app);
+  --ap-surface: var(--bg-elevated);
+  --ap-surface-alt: var(--surface-alt);
+  --ap-ink: var(--text-primary);
+  --ap-ink-soft: var(--text-secondary);
+  --ap-ink-faint: var(--text-muted);
+  --ap-border-soft: var(--border-hairline);
+  --ap-border: var(--border-strong);
+  --ap-green: var(--accent);
+  --ap-green-dark: var(--accent-press);
+  --ap-green-darker: var(--ink-0);
+  --ap-green-tint: var(--accent-soft);
+  --ap-gold: var(--gold-500);
+  --ap-gold-dark: var(--gold-dark);
+  --ap-gold-soft: color-mix(in srgb, var(--gold-500) 18%, transparent);
+  --ap-red: var(--danger);
+  --ap-red-tint: color-mix(in srgb, var(--danger) 16%, transparent);
+  --ap-blue-tint: var(--info-soft);
+  --ap-blue-dark: var(--info);
+  --ap-shadow-sm: var(--shadow-pressed);
+  --ap-shadow-md: var(--shadow-card);
+  --ap-font-sans: var(--font-core);
+  --ap-font-mono: var(--font-mono);
 
   display: flex;
   min-height: 100vh;
@@ -64,7 +63,7 @@
 .ap-first-access { display: inline-flex; align-items: center; gap: 4px; background: var(--ap-gold-soft); color: var(--ap-gold-dark); }
 .ap-status { border: 0; border-radius: 999px; padding: 5px 9px; background: var(--ap-red-tint); color: var(--ap-red); cursor: pointer; font: inherit; font-size: 11px; font-weight: 700; }
 .ap-status.is-active { background: var(--ap-green-tint); color: var(--ap-green); }
-.ap-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(20, 18, 15, .45); }
+.ap-modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: var(--glass-lo); }
 .ap-modal { width: min(100%, 440px); display: flex; flex-direction: column; gap: 14px; padding: 24px; border-radius: 16px; background: var(--ap-surface); box-shadow: var(--ap-shadow-md); }
 .ap-field { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 700; }
 .ap-field input, .ap-field select { border: 1px solid var(--ap-border); border-radius: 9px; padding: 10px 11px; background: var(--ap-surface-alt); color: var(--ap-ink); font: inherit; outline: 0; }
@@ -78,7 +77,7 @@
 .ap-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 18, 15, 0.45);
+  background: var(--glass-lo);
   z-index: 59;
 }
 
@@ -88,7 +87,10 @@
   width: 224px;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, var(--ap-green-dark), var(--ap-green-darker));
+  background: var(--surface-bar);
+  backdrop-filter: var(--blur-bar);
+  -webkit-backdrop-filter: var(--blur-bar);
+  box-shadow: var(--ring-inner);
   transition: width 0.2s ease;
 }
 .ap-sidebar.is-collapsed {
@@ -116,7 +118,7 @@
   align-items: center;
   gap: 12px;
   padding: 20px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--ap-border-soft);
   min-width: 0;
 }
 .ap-sidebar-logo {
@@ -124,7 +126,7 @@
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--glass-2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,14 +141,14 @@
 .ap-sidebar-brand-name {
   font-weight: 800;
   font-size: 14.5px;
-  color: #fff;
+  color: var(--ap-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ap-sidebar-brand-tag {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--ap-ink-faint);
   letter-spacing: 0.03em;
 }
 
@@ -172,13 +174,13 @@
   font-size: 13.5px;
   font-weight: 700;
   font-family: inherit;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--ap-ink-soft);
 }
 .ap-nav-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--ap-ink) 6%, transparent);
 }
 .ap-nav-item.is-active {
-  background: rgba(199, 154, 86, 0.16);
+  background: color-mix(in srgb, var(--ap-gold) 16%, transparent);
   color: var(--ap-gold);
 }
 .ap-nav-item-icon {
@@ -204,7 +206,7 @@
   gap: 2px;
   margin: 2px 0 6px 20px;
   padding-left: 14px;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 1px solid var(--ap-border);
 }
 .ap-nav-subitem {
   padding: 8px 12px;
@@ -212,17 +214,17 @@
   font-size: 12.5px;
   font-weight: 600;
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--ap-ink-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ap-nav-subitem:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--ap-ink) 6%, transparent);
+  color: var(--ap-ink);
 }
 .ap-nav-subitem.is-active {
-  background: rgba(199, 154, 86, 0.14);
+  background: color-mix(in srgb, var(--ap-gold) 14%, transparent);
   color: var(--ap-gold);
 }
 
@@ -232,9 +234,9 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ap-ink-soft);
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
@@ -243,7 +245,7 @@
   font-family: inherit;
 }
 .ap-sidebar-collapse:hover {
-  background: rgba(255, 255, 255, 0.13);
+  background: color-mix(in srgb, var(--ap-ink) 13%, transparent);
 }
 @media (max-width: 859px) {
   .ap-sidebar-collapse {
@@ -263,8 +265,9 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(246, 242, 231, 0.9);
-  backdrop-filter: blur(10px);
+  background: var(--surface-bar);
+  backdrop-filter: var(--blur-bar);
+  -webkit-backdrop-filter: var(--blur-bar);
   border-bottom: 1px solid var(--ap-border-soft);
   padding: 16px 24px;
   display: flex;
@@ -293,6 +296,9 @@
   color: var(--ap-ink);
 }
 .ap-header-title {
+  /* explicit color needed: the global index.css `h1{color:var(--text-h)}` rule
+     otherwise wins over inheritance regardless of specificity ordering here. */
+  color: var(--ap-ink);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -364,7 +370,7 @@
 }
 .ap-period-chip.is-active {
   background: var(--ap-green);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 
 .ap-custom-period { position: relative; }
@@ -611,7 +617,7 @@
 }
 .ap-btn-primary {
   background: var(--ap-green);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .ap-btn-primary:hover:not(:disabled) {
   background: var(--ap-green-dark);
@@ -912,18 +918,18 @@
 .ap-tab.is-active {
   background: var(--ap-green);
   border-color: var(--ap-green);
-  color: #fff;
+  color: var(--text-on-accent);
 }
 .ap-tab-count {
   font-family: var(--ap-font-mono);
   font-size: 11px;
   font-weight: 700;
-  background: rgba(0, 0, 0, 0.08);
+  background: color-mix(in srgb, var(--ap-ink) 10%, transparent);
   border-radius: 100px;
   padding: 1px 7px;
 }
 .ap-tab.is-active .ap-tab-count {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--text-on-accent) 20%, transparent);
 }
 
 /* ---------- Table (Cardápio: itens por categoria) ---------- */

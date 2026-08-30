@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LogOut, Menu, X } from 'lucide-react'
+import ThemeToggle from '../ember/ThemeToggle'
 
 const PAPEL_LABEL: Record<string, string> = {
   MANAGER: 'Manager',
@@ -71,6 +72,10 @@ export default function KitchenHeader({
           </span>
 
           <span className="kitchen-clock">{clock}</span>
+
+          <span className="kitchen-theme-toggle-wrap">
+            <ThemeToggle />
+          </span>
 
           <button type="button" className="kitchen-btn-logout" onClick={onLogout} aria-label="Sair">
             <LogOut className="h-4 w-4" />

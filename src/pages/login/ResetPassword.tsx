@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../../services/auth'
+import StaffThemeShell from '../../components/ember/StaffThemeShell'
+import ThemeToggle from '../../components/ember/ThemeToggle'
+import TextField from '../../components/ember/TextField'
+import Button from '../../components/ember/Button'
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams()
@@ -29,5 +33,46 @@ export default function ResetPassword() {
     }
   }
 
-  return <div className="flex min-h-screen items-center justify-center bg-[#f5efe1] px-4"><form onSubmit={handleSubmit} className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm"><h1 className="text-xl font-extrabold text-slate-900">Redefinir senha</h1>{success ? <><p className="mt-2 text-sm text-emerald-700">Sua senha foi redefinida com sucesso.</p><button type="button" onClick={() => navigate('/login')} className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-4 text-sm font-semibold text-white">Ir para o login</button></> : <><p className="mt-1 text-sm text-slate-500">Escolha uma nova senha para acessar o sistema.</p><label htmlFor="reset-password" className="mt-6 block text-xs font-semibold uppercase tracking-wide text-slate-500">Nova senha</label><input id="reset-password" required minLength={8} type="password" value={password} onChange={event => setPassword(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" /><label htmlFor="reset-confirmation" className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Confirmar nova senha</label><input id="reset-confirmation" required type="password" value={confirmation} onChange={event => setConfirmation(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" />{error && <p className="mt-3 text-sm font-medium text-rose-600">{error}</p>}<button type="submit" disabled={saving} className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-4 text-sm font-semibold text-white disabled:opacity-70">{saving ? 'Salvando...' : 'Salvar nova senha'}</button></>}</form></div>
+  return (
+    <StaffThemeShell>
+      <div className="relative flex min-h-screen items-center justify-center px-4">
+        <div aria-hidden style={{ position: 'absolute', top: -140, left: -100, width: 460, height: 460, background: 'var(--gradient-ember-glow)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 20, right: 20 }}>
+          <ThemeToggle />
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="relative w-full max-w-sm p-8"
+          style={{ borderRadius: 'var(--r-sheet)', background: 'var(--surface-sheet)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)', boxShadow: 'var(--ring-inner), var(--shadow-card)' }}
+        >
+          <h1 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Redefinir senha</h1>
+          {success ? (
+            <>
+              <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--success)' }}>Sua senha foi redefinida com sucesso.</p>
+              <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} onClick={() => navigate('/login')}>Ir para o login</Button>
+            </>
+          ) : (
+            <>
+              <p className="mt-1" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>Escolha uma nova senha para acessar o sistema.</p>
+              <div className="mt-6 space-y-5">
+                <TextField
+                  id="reset-password" label="Nova senha" required minLength={8} type="password"
+                  value={password} onChange={event => setPassword(event.target.value)}
+                />
+                <TextField
+                  id="reset-confirmation" label="Confirmar nova senha" required type="password"
+                  value={confirmation} onChange={event => setConfirmation(event.target.value)}
+                />
+              </div>
+              {error && <p className="mt-3" style={{ font: 'var(--text-body)', color: 'var(--danger)' }}>{error}</p>}
+              <Button type="submit" fullWidth size="lg" disabled={saving} style={{ marginTop: 'var(--sp-6)' }}>
+                {saving ? 'Salvando...' : 'Salvar nova senha'}
+              </Button>
+            </>
+          )}
+        </form>
+      </div>
+    </StaffThemeShell>
+  )
 }

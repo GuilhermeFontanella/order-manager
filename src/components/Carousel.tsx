@@ -31,7 +31,10 @@ export default function Carousel({ images, alt = '', className = '' }: Props) {
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-[28px] bg-slate-100 ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded-[28px] ${className}`}
+      style={{ background: 'var(--ink-2, #f1f5f9)' }}
+    >
       <motion.div
         className="flex h-full cursor-grab active:cursor-grabbing"
         style={{ touchAction: 'pan-y' }}

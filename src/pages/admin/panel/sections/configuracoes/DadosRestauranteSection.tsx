@@ -84,7 +84,7 @@ export default function DadosRestauranteSection() {
         <div className="ap-card-title">Informações gerais</div>
         <div className="ap-card-sub">Como o restaurante se apresenta para os clientes no cardápio digital.</div>
 
-        <div className="ap-field">
+        <div className="ap-field mb-4">
           <label className="ap-field-label" htmlFor="nome-restaurante">Nome do restaurante</label>
           <input
             id="nome-restaurante"
@@ -94,7 +94,7 @@ export default function DadosRestauranteSection() {
           />
         </div>
 
-        <div className="ap-field">
+        <div className="ap-field mb-4">
           <label className="ap-field-label" htmlFor="descricao-restaurante">Descrição curta</label>
           <textarea
             id="descricao-restaurante"

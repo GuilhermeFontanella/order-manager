@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { changePassword } from '../../services/auth'
 import { resolveDefaultRoute } from '../../routes'
+import StaffThemeShell from '../../components/ember/StaffThemeShell'
+import ThemeToggle from '../../components/ember/ThemeToggle'
+import TextField from '../../components/ember/TextField'
+import Button from '../../components/ember/Button'
 
 export default function ChangePassword() {
   const { user, refreshUser } = useAuth()
@@ -30,5 +34,46 @@ export default function ChangePassword() {
     }
   }
 
-  return <div className="flex min-h-screen items-center justify-center bg-[#f5efe1] px-4"><form onSubmit={handleSubmit} className="w-full max-w-sm rounded-3xl bg-white p-8 shadow-sm"><h1 className="text-xl font-extrabold text-slate-900">Crie sua nova senha</h1><p className="mt-1 text-sm text-slate-500">Por segurança, a senha temporária precisa ser alterada antes de continuar.</p><label htmlFor="current-password" className="mt-6 block text-xs font-semibold uppercase tracking-wide text-slate-500">Senha temporária</label><input id="current-password" required type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" /><label htmlFor="new-password" className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Nova senha</label><input id="new-password" required type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" /><label htmlFor="confirm-password" className="mt-5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Confirmar nova senha</label><input id="confirm-password" required type="password" value={confirmation} onChange={event => setConfirmation(event.target.value)} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-500" />{error && <p className="mt-3 text-sm font-medium text-rose-600">{error}</p>}<button type="submit" disabled={saving} className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-4 text-sm font-semibold text-white disabled:opacity-70">{saving ? 'Salvando...' : 'Salvar nova senha'}</button></form></div>
+  return (
+    <StaffThemeShell>
+      <div className="relative flex min-h-screen items-center justify-center px-4">
+        <div aria-hidden style={{ position: 'absolute', top: -140, left: -100, width: 460, height: 460, background: 'var(--gradient-ember-glow)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 20, right: 20 }}>
+          <ThemeToggle />
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="relative w-full max-w-sm p-8"
+          style={{ borderRadius: 'var(--r-sheet)', background: 'var(--surface-sheet)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)', boxShadow: 'var(--ring-inner), var(--shadow-card)' }}
+        >
+          <h1 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Crie sua nova senha</h1>
+          <p className="mt-1" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
+            Por segurança, a senha temporária precisa ser alterada antes de continuar.
+          </p>
+
+          <div className="mt-6 space-y-5">
+            <TextField
+              id="current-password" label="Senha temporária" required type="password"
+              value={currentPassword} onChange={event => setCurrentPassword(event.target.value)}
+            />
+            <TextField
+              id="new-password" label="Nova senha" required type="password"
+              value={newPassword} onChange={event => setNewPassword(event.target.value)}
+            />
+            <TextField
+              id="confirm-password" label="Confirmar nova senha" required type="password"
+              value={confirmation} onChange={event => setConfirmation(event.target.value)}
+            />
+          </div>
+
+          {error && <p className="mt-3" style={{ font: 'var(--text-body)', color: 'var(--danger)' }}>{error}</p>}
+
+          <Button type="submit" fullWidth size="lg" disabled={saving} style={{ marginTop: 'var(--sp-6)' }}>
+            {saving ? 'Salvando...' : 'Salvar nova senha'}
+          </Button>
+        </form>
+      </div>
+    </StaffThemeShell>
+  )
 }

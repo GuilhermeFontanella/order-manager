@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -File \"C:\\Users\\guijm\\projeto\\order-manager\\.claude\\hooks\\guard-home-dir-access.ps1\"",
+            "shell": "powershell",
+            "statusMessage": "Checking file/command scope against home-directory guardrail..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LogOut, Menu, X } from 'lucide-react'
+import ThemeToggle from '../ember/ThemeToggle'
 
 type Props = {
   clock: string
@@ -80,6 +81,8 @@ export default function CounterHeader({
         </span>
 
         <span className="counter-clock">{clock}</span>
+
+        <ThemeToggle />
 
         <button type="button" className="counter-btn-logout" onClick={onLogout} aria-label="Sair">
           <LogOut className="h-4 w-4" />

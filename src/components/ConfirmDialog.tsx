@@ -51,18 +51,35 @@ export default function ConfirmDialog({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-dialog-title"
-            className="relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.18)]"
+            className="relative w-full max-w-sm p-6"
+            style={{
+              borderRadius: 'var(--r-sheet, 28px)',
+              background: 'var(--surface-sheet, #ffffff)',
+              backdropFilter: 'var(--blur-glass, none)',
+              WebkitBackdropFilter: 'var(--blur-glass, none)',
+              boxShadow: 'var(--shadow-sheet, 0 24px 80px rgba(15,23,42,0.18))',
+            }}
           >
-            <h2 id="confirm-dialog-title" className="text-base font-semibold text-slate-900">
+            <h2 id="confirm-dialog-title" style={{ font: 'var(--text-title, 600 16px/1.3 system-ui, sans-serif)', color: 'var(--text-primary, #0f172a)' }}>
               {title}
             </h2>
-            {description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{description}</p>}
+            {description && (
+              <p className="mt-2" style={{ font: 'var(--text-body, 400 14px/1.5 system-ui, sans-serif)', color: 'var(--text-secondary, #475569)' }}>
+                {description}
+              </p>
+            )}
 
             <div className="mt-6 flex gap-3">
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex-1 rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                className="flex-1 px-4 py-3 transition"
+                style={{
+                  borderRadius: 'var(--r-button, 16px)',
+                  background: 'var(--surface-control, #f1f5f9)',
+                  color: 'var(--text-primary, #334155)',
+                  font: 'var(--text-label, 600 14px/1.35 system-ui, sans-serif)',
+                }}
               >
                 {cancelLabel}
               </button>
@@ -70,9 +87,13 @@ export default function ConfirmDialog({
                 type="button"
                 onClick={onConfirm}
                 autoFocus
-                className={`flex-1 rounded-2xl px-4 py-3 text-sm font-semibold text-white transition ${
-                  destructive ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-900 hover:bg-slate-800'
-                }`}
+                className="flex-1 px-4 py-3 transition"
+                style={{
+                  borderRadius: 'var(--r-button, 16px)',
+                  font: 'var(--text-label, 600 14px/1.35 system-ui, sans-serif)',
+                  background: destructive ? 'var(--danger, #e11d48)' : 'var(--gradient-cta, #0f172a)',
+                  color: destructive ? '#fff' : 'var(--text-on-accent, #fff)',
+                }}
               >
                 {confirmLabel}
               </button>

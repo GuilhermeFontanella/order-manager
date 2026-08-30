@@ -1,10 +1,14 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Wallet } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { readMesaSession } from '../../lib/mesaSession'
 import { confirmarPagamento, createPedido, type MetodoPagamento, type PedidoCriado } from '../../services/storefront'
+import '../../styles/ember-theme.css'
+import IconButton from '../../components/ember/IconButton'
+import Button from '../../components/ember/Button'
+import TextField from '../../components/ember/TextField'
 
 type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao'
 
@@ -14,39 +18,46 @@ function ProgressDots({ active }: { active: 0 | 1 }) {
       {[0, 1, 2].map(i => (
         <span
           key={i}
-          className={`h-2 rounded-full transition-all ${
-            i === active ? 'w-6 bg-emerald-600' : 'w-2 bg-slate-300'
-          }`}
+          className="h-2 rounded-full transition-all"
+          style={{
+            width: i === active ? 24 : 8,
+            background: i === active ? 'var(--accent)' : 'var(--border-strong)',
+          }}
         />
       ))}
     </div>
   )
 }
 
-function CheckoutHeader({ active, onClose }: { title: string; active: 0 | 1; onClose: () => void }) {
+function CheckoutHeader({ active, onClose }: { active: 0 | 1; onClose: () => void }) {
   return (
     <header className="relative flex items-center justify-between px-4 py-4">
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Fechar"
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-sm"
-      >
-        <ArrowLeft className="h-4 w-4 text-slate-700" />
-      </button>
+      <IconButton icon={ArrowLeft} label="Fechar" onClick={onClose} />
       <ProgressDots active={active} />
+      <span style={{ width: 44 }} />
     </header>
+  )
+}
+
+function GlassCard({ children, style }: { children: ReactNode; style?: CSSProperties }) {
+  return (
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)', ...style }}
+    >
+      {children}
+    </div>
   )
 }
 
 function ItemSummaryCard({ itemCount, total }: { itemCount: number; total: number }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm mb-6">
-      <span className="text-sm text-slate-500">
+    <GlassCard style={{ marginBottom: 'var(--sp-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
         {itemCount} {itemCount === 1 ? 'item' : 'itens'} no pedido
       </span>
-      <span className="font-mono font-semibold text-slate-900">{fmt(total)}</span>
-    </div>
+      <span style={{ font: 'var(--text-title)', color: 'var(--text-price)' }}>{fmt(total)}</span>
+    </GlassCard>
   )
 }
 
@@ -83,12 +94,12 @@ function PixQrCode() {
 
   return (
     <div
-      className="grid bg-white"
-      style={{ gridTemplateColumns: `repeat(${size}, 1fr)`, width: 176, height: 176 }}
+      className="grid"
+      style={{ gridTemplateColumns: `repeat(${size}, 1fr)`, width: 176, height: 176, background: '#fff', borderRadius: 'var(--r-sm)' }}
     >
       {grid.flatMap((row, y) =>
         row.map((filled, x) => (
-          <div key={`${x}-${y}`} className={filled ? 'bg-slate-900' : 'bg-white'} />
+          <div key={`${x}-${y}`} style={{ background: filled ? '#0e0907' : '#fff' }} />
         ))
       )}
     </div>
@@ -200,53 +211,39 @@ export default function Checkout() {
 
   if (items.length === 0) {
     return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Finalizar pedido</h1>
-        <div className="text-gray-500">Seu carrinho está vazio.</div>
+      <div className="ember-theme min-h-screen p-4">
+        <h1 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)', marginBottom: 'var(--sp-4)' }}>Finalizar pedido</h1>
+        <div style={{ color: 'var(--text-muted)' }}>Seu carrinho está vazio.</div>
       </div>
     )
   }
 
   if (step === 'identificacao') {
     return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Identificação" active={0} onClose={() => navigate(-1)} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Revisão do pedido</h2>
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={0} onClose={() => navigate(-1)} />
 
         <div className="px-4 pb-24">
-          <div className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm mb-8">
-            <span className="text-sm text-slate-500">
-              {itemCount} {itemCount === 1 ? 'item' : 'itens'} no pedido
-            </span>
-            <span className="font-mono font-semibold text-slate-900">{fmt(total)}</span>
-          </div>
+          <ItemSummaryCard itemCount={itemCount} total={total} />
 
-          <h2 className="mt-6 text-xl font-extrabold text-slate-900">Como podemos te chamar?</h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como podemos te chamar?</h2>
+          <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Vamos usar esse nome no painel do balcão para chamar você quando o pedido estiver pronto.
           </p>
 
-          <label htmlFor="checkout-nome" className="mt-6 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Seu nome
-          </label>
-          <input
-            id="checkout-nome"
-            value={nome}
-            onChange={event => setNome(event.target.value)}
-            placeholder="Ex: Guilherme"
-            className="mt-2 w-full rounded-2xl border-2 border-emerald-600 bg-white px-4 py-3 text-slate-900 outline-none"
-          />
+          <div className="mt-6">
+            <TextField
+              id="checkout-nome"
+              label="Seu nome"
+              value={nome}
+              onChange={event => setNome(event.target.value)}
+              placeholder="Ex: Guilherme"
+            />
+          </div>
 
-          <button
-            type="button"
-            disabled={!nome.trim()}
-            onClick={() => setStep('pagamento')}
-            className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
-              nome.trim() ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
-            }`}
-          >
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim()} onClick={() => setStep('pagamento')}>
             Continuar
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -260,15 +257,14 @@ export default function Checkout() {
     ]
 
     return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Forma de pagamento" active={1} onClose={() => setStep('identificacao')} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Forma de pagamento</h2>
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={1} onClose={() => setStep('identificacao')} />
 
         <div className="px-4 pb-24">
           <ItemSummaryCard itemCount={itemCount} total={total} />
 
-          <h2 className="text-xl font-extrabold text-slate-900">Como você vai pagar?</h2>
-          <p className="mt-2 text-sm text-slate-500">
+          <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como você vai pagar?</h2>
+          <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Escolha a forma de pagamento para enviar o pedido para a cozinha.
           </p>
 
@@ -280,16 +276,20 @@ export default function Checkout() {
                   key={method.id}
                   type="button"
                   onClick={() => { setMetodoPagamento(method.id); setStep('revisao') }}
-                  className="w-full flex items-center gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm text-left transition hover:bg-slate-50"
+                  className="w-full flex items-center gap-4 px-4 py-4 text-left transition"
+                  style={{ borderRadius: 'var(--r-card)', background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)' }}
                 >
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center"
+                    style={{ borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', color: 'var(--accent-quiet)' }}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm text-slate-900">{method.label}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{method.desc}</div>
+                    <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{method.label}</div>
+                    <div className="mt-0.5" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{method.desc}</div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <ChevronRight className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
                 </button>
               )
             })}
@@ -301,41 +301,36 @@ export default function Checkout() {
 
   if (step === 'revisao') {
     return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Revisão do pedido" active={1} onClose={() => setStep('pagamento')} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Revisão do pedido</h2>
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={1} onClose={() => setStep('pagamento')} />
         <div className="px-4 pb-24">
+          <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Revisão do pedido</h2>
           <ul className="space-y-3">
             {items.map(it => (
-              <li key={it.id} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-                <div className="text-left">
-                  <div className="font-semibold text-slate-900">{it.item.nome}</div>
-                  <div className="text-xs text-gray-500">{it.qty} x {fmt(it.item.preco)}</div>
-                </div>
-                <div className="font-mono text-slate-900">{fmt(it.item.preco * it.qty)}</div>
+              <li key={it.id}>
+                <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="text-left">
+                    <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{it.item.nome}</div>
+                    <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{it.qty} x {fmt(it.item.preco)}</div>
+                  </div>
+                  <div style={{ font: 'var(--text-title)', color: 'var(--text-price)' }}>{fmt(it.item.preco * it.qty)}</div>
+                </GlassCard>
               </li>
             ))}
           </ul>
 
           {submitError && (
-            <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{submitError}</p>
+            <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{submitError}</p>
           )}
 
-          <div className="mt-6 flex items-center justify-between rounded-2xl bg-white px-4 py-3 shadow-sm">
-            <div className="text-left">
-              <div className="text-sm text-gray-500">Total</div>
-              <div className="font-bold text-lg text-slate-900">{fmt(total)}</div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={handleConfirmPedido}
-                className={`px-4 py-2 rounded-xl text-white ${submitting ? 'cursor-not-allowed bg-slate-300' : 'bg-green-600'}`}
-              >
-                <Check />
-              </button>
-            </div>
+          <div className="mt-6">
+            <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className="text-left">
+                <div style={{ font: 'var(--text-label)', color: 'var(--text-muted)' }}>Total</div>
+                <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(total)}</div>
+              </div>
+              <IconButton icon={Check} label="Confirmar pedido" variant="accent" onClick={handleConfirmPedido} style={{ opacity: submitting ? 0.5 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }} />
+            </GlassCard>
           </div>
         </div>
       </div>
@@ -344,54 +339,50 @@ export default function Checkout() {
 
   if (step === 'pix') {
     return (
-      <div className="min-h-screen bg-[#f5efe1]">
-        <CheckoutHeader title="Pagar com Pix" active={1} onClose={() => setStep('revisao')} />
-        <h2 className="text-base font-bold text-slate-900 mb-8">Pagar com Pix</h2>
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
 
         <div className="px-4 pb-24">
+          <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Pagar com Pix</h2>
           {pedido && (
-            <p className="mb-2 text-right text-xs text-slate-500">Pedido nº {pedido.numeroSequencial}</p>
+            <p className="mb-2 text-right" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Pedido nº {pedido.numeroSequencial}</p>
           )}
           <ItemSummaryCard itemCount={itemCount} total={total} />
 
-          <div className="rounded-2xl bg-white p-6 shadow-sm flex flex-col items-center">
+          <GlassCard style={{ padding: 'var(--sp-6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <PixQrCode />
-            <div className="mt-4 text-2xl font-bold text-slate-900">{fmt(total)}</div>
-            <p className="mt-2 text-sm text-slate-500 text-center">
+            <div className="mt-4" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{fmt(total)}</div>
+            <p className="mt-2 text-center" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
               Abra o app do seu banco e escaneie o código, ou copie e cole na área Pix Copia e Cola.
             </p>
+          </GlassCard>
+
+          <div className="mt-4">
+            <GlassCard style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+              <span className="flex-1 truncate" style={{ font: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{pixCode}</span>
+              <button
+                type="button"
+                onClick={handleCopyPixCode}
+                className="shrink-0 px-3 py-1.5"
+                style={{ borderRadius: 'var(--r-sm)', background: 'var(--surface-control)', color: 'var(--text-primary)', font: 'var(--text-caption)' }}
+              >
+                {copied ? 'Copiado!' : 'Copiar'}
+              </button>
+            </GlassCard>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-sm">
-            <span className="flex-1 truncate font-mono text-xs text-slate-600">{pixCode}</span>
-            <button
-              type="button"
-              onClick={handleCopyPixCode}
-              className="flex-shrink-0 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
-            >
-              {copied ? 'Copiado!' : 'Copiar'}
-            </button>
-          </div>
-
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-slate-500">
-            <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <div className="mt-4 flex items-center justify-center gap-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
+            <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: 'var(--gold-500)' }} />
             Aguardando confirmação do pagamento...
           </div>
 
           {confirmError && (
-            <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{confirmError}</p>
+            <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{confirmError}</p>
           )}
 
-          <button
-            type="button"
-            disabled={confirming}
-            onClick={handleConfirmPagamento}
-            className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
-              confirming ? 'cursor-not-allowed bg-emerald-400' : 'bg-emerald-700 hover:bg-emerald-800'
-            }`}
-          >
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={confirming} onClick={handleConfirmPagamento}>
             {confirming ? 'Confirmando...' : 'Simular pagamento confirmado'}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -400,82 +391,57 @@ export default function Checkout() {
   const cardStepTitle = metodoPagamento === 'CARTAO_DEBITO' ? 'Cartão de débito' : 'Cartão de crédito'
 
   return (
-    <div className="min-h-screen bg-[#f5efe1]">
-      <CheckoutHeader title={cardStepTitle} active={1} onClose={() => setStep('revisao')} />
-      <h2 className="text-base font-bold text-slate-900 mb-8">{cardStepTitle}</h2>
+    <div className="ember-theme min-h-screen">
+      <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
 
       <div className="px-4 pb-24">
+        <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{cardStepTitle}</h2>
         {pedido && (
-          <p className="mb-2 text-right text-xs text-slate-500">Pedido nº {pedido.numeroSequencial}</p>
+          <p className="mb-2 text-right" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Pedido nº {pedido.numeroSequencial}</p>
         )}
         <ItemSummaryCard itemCount={itemCount} total={total} />
 
-        <label htmlFor="card-number" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Número do cartão
-        </label>
-        <input
-          id="card-number"
-          value={cardNumber}
-          onChange={event => setCardNumber(formatCardNumber(event.target.value))}
-          placeholder="0000 0000 0000 0000"
-          inputMode="numeric"
-          className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-        />
+        <div className="space-y-5">
+          <TextField
+            id="card-number" label="Número do cartão"
+            value={cardNumber}
+            onChange={event => setCardNumber(formatCardNumber(event.target.value))}
+            placeholder="0000 0000 0000 0000"
+            inputMode="numeric"
+          />
 
-        <label htmlFor="card-name" className="mt-5 block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-          Nome impresso no cartão
-        </label>
-        <input
-          id="card-name"
-          value={cardName}
-          onChange={event => setCardName(event.target.value)}
-          placeholder="Como está no cartão"
-          className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
-        />
+          <TextField
+            id="card-name" label="Nome impresso no cartão"
+            value={cardName}
+            onChange={event => setCardName(event.target.value)}
+            placeholder="Como está no cartão"
+          />
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="card-validade" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Validade
-            </label>
-            <input
-              id="card-validade"
+          <div className="grid grid-cols-2 gap-3">
+            <TextField
+              id="card-validade" label="Validade"
               value={cardValidade}
               onChange={event => setCardValidade(formatValidade(event.target.value))}
               placeholder="MM/AA"
               inputMode="numeric"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
             />
-          </div>
-          <div>
-            <label htmlFor="card-cvv" className="block text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-              CVV
-            </label>
-            <input
-              id="card-cvv"
+            <TextField
+              id="card-cvv" label="CVV"
               value={cardCvv}
               onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
               placeholder="123"
               inputMode="numeric"
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-900 outline-none focus:border-emerald-500"
             />
           </div>
         </div>
 
         {confirmError && (
-          <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{confirmError}</p>
+          <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{confirmError}</p>
         )}
 
-        <button
-          type="button"
-          disabled={!cardValid || confirming}
-          onClick={handleConfirmPagamento}
-          className={`mt-6 w-full rounded-2xl px-4 py-4 text-sm font-semibold text-white shadow-sm transition ${
-            cardValid && !confirming ? 'bg-slate-900 hover:bg-slate-800' : 'cursor-not-allowed bg-slate-300'
-          }`}
-        >
+        <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!cardValid || confirming} onClick={handleConfirmPagamento}>
           {confirming ? 'Confirmando...' : `Pagar ${fmt(total)}`}
-        </button>
+        </Button>
       </div>
     </div>
   )

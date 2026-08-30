@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { CircleAlert } from 'lucide-react'
 import './kitchen.css'
 import KitchenHeader from '../../components/kitchen/KitchenHeader'
 import KitchenColumn from '../../components/kitchen/KitchenColumn'
@@ -10,6 +11,7 @@ import { getApiErrorMessage } from '../../services/apiClient'
 import { usePedidosRealtime } from '../../services/realtime'
 import type { Pedido } from '../../services/storefront'
 import ConfirmDialog from '../../components/ConfirmDialog'
+import StaffThemeShell from '../../components/ember/StaffThemeShell'
 
 function toKitchenOrder(pedido: Pedido): KitchenOrder | null {
   if (pedido.status !== 'PREPARANDO' && pedido.status !== 'PRONTO') return null
@@ -127,6 +129,7 @@ export default function Kitchen() {
   const pronto = kitchenOrders.filter(o => o.status === 'pronto')
 
   return (
+    <StaffThemeShell>
     <div className="kitchen-page w-full">
       <KitchenHeader
         clock={new Date(now).toLocaleTimeString('pt-BR')}
@@ -137,12 +140,18 @@ export default function Kitchen() {
       />
 
       {!restaurantOpen && (
-        <div className="kitchen-closed-banner">
-          🚫 Restaurante fechado — nenhum pedido novo será recebido até o balcão abrir novamente. Os pedidos já em andamento continuam visíveis abaixo.
+        <div className="kitchen-closed-banner flex items-center gap-2">
+          <CircleAlert className="h-4 w-4 shrink-0" />
+          <span>Restaurante fechado — nenhum pedido novo será recebido até o balcão abrir novamente. Os pedidos já em andamento continuam visíveis abaixo.</span>
         </div>
       )}
 
-      {loadError && <div className="kitchen-closed-banner">{loadError}</div>}
+      {loadError && (
+        <div className="kitchen-closed-banner flex items-center gap-2">
+          <CircleAlert className="h-4 w-4 shrink-0" />
+          <span>{loadError}</span>
+        </div>
+      )}
 
       <div className="kitchen-board">
         <KitchenColumn
@@ -179,5 +188,6 @@ export default function Kitchen() {
         onCancel={() => setPendingCancelId(null)}
       />
     </div>
+    </StaffThemeShell>
   )
 }

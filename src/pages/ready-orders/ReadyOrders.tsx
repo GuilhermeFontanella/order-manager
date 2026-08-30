@@ -6,6 +6,8 @@ import {
   type ReadyOrdersSnapshot,
 } from '../../components/counter/readyOrdersSync'
 import { elapsedLabel } from '../../components/counter/utils'
+import StaffThemeShell from '../../components/ember/StaffThemeShell'
+import ThemeToggle from '../../components/ember/ThemeToggle'
 
 export default function ReadyOrders() {
   const [snapshot, setSnapshot] = useState<ReadyOrdersSnapshot>(() => readReadyOrdersSnapshot())
@@ -42,6 +44,7 @@ export default function ReadyOrders() {
   const outros = lastCall ? prontos.filter(p => p.senha !== lastCall.senha) : prontos
 
   return (
+    <StaffThemeShell>
     <div className="ro-page">
       <header className="ro-header">
         <div className="ro-brand">
@@ -51,7 +54,10 @@ export default function ReadyOrders() {
             <div className="ro-sub">Pedidos prontos para retirada</div>
           </div>
         </div>
-        <span className="ro-clock">{new Date(now).toLocaleTimeString('pt-BR')}</span>
+        <span className="ro-clock">
+          {new Date(now).toLocaleTimeString('pt-BR')}
+          <ThemeToggle />
+        </span>
       </header>
 
       <main className="ro-main">
@@ -90,5 +96,6 @@ export default function ReadyOrders() {
         )}
       </main>
     </div>
+    </StaffThemeShell>
   )
 }

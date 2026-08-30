@@ -29,7 +29,7 @@ export default function ContaSection() {
 
   return (
     <div className="ap-settings-stack">
-      <div className="ap-card">
+      <div className="ap-card text-left">
         <span className="ap-plan-badge">Plano atual</span>
         <div className="ap-card-title">Profissional</div>
         <div className="ap-card-sub" style={{ marginBottom: 0 }}>
@@ -62,8 +62,8 @@ export default function ContaSection() {
         {avisoPlano && <p className="ap-card-sub" style={{ marginTop: 14, marginBottom: 0 }}>{avisoPlano}</p>}
       </div>
 
-      <div className="ap-card">
-        <div className="ap-card-title">Uso atual</div>
+      <div className="ap-card text-left">
+        <div className="ap-card-title mb-4">Uso atual</div>
         <div className="ap-usage-row">
           <span>Mesas ativas</span>
           <span style={{ fontFamily: 'var(--ap-font-mono)' }}>4 / 10</span>
@@ -78,8 +78,8 @@ export default function ContaSection() {
         </div>
       </div>
 
-      <div className="ap-card">
-        <div className="ap-card-title">Forma de pagamento da assinatura</div>
+      <div className="ap-card text-left">
+        <div className="ap-card-title mb-4">Forma de pagamento da assinatura</div>
         <div className="ap-toggle-row" style={{ borderTop: 'none', paddingTop: 0 }}>
           <div className="ap-toggle-info">
             <span className="ap-toggle-icon">
@@ -97,10 +97,10 @@ export default function ContaSection() {
         {avisoCartao && <p className="ap-card-sub" style={{ marginTop: 10, marginBottom: 0 }}>Atualização de cartão ainda não está disponível.</p>}
       </div>
 
-      <div className="ap-card ap-danger-card">
+      <div className="ap-card ap-danger-card text-left">
         <div className="ap-group-header">
           <div>
-            <div className="ap-card-title">Cancelar assinatura</div>
+            <div className="ap-card-title mb-4">Cancelar assinatura</div>
             <div className="ap-card-sub" style={{ marginBottom: 0 }}>
               Encerra o acesso à plataforma ao fim do período já pago.
             </div>

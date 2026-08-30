@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LogOut, Menu } from 'lucide-react'
 import { ThemeProvider } from '@mui/material/styles'
 import { useAuth } from '../../../context/AuthContext'
+import { EmberThemeProvider, useEmberTheme } from '../../../context/EmberThemeContext'
+import ThemeToggle from '../../../components/ember/ThemeToggle'
 import Sidebar from './components/Sidebar'
-import { adminMuiTheme } from './muiTheme'
+import { createAdminMuiTheme } from './muiTheme'
 import './admin-panel.css'
 
 const MOBILE_BREAKPOINT = 860
@@ -38,6 +40,16 @@ function useIsMobile() {
 }
 
 export default function AdminPanel() {
+  return (
+    <EmberThemeProvider>
+      <AdminPanelShell />
+    </EmberThemeProvider>
+  )
+}
+
+function AdminPanelShell() {
+  const { theme } = useEmberTheme()
+  const muiTheme = useMemo(() => createAdminMuiTheme(theme), [theme])
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -58,8 +70,8 @@ export default function AdminPanel() {
   }
 
   return (
-    <ThemeProvider theme={adminMuiTheme}>
-      <div className="admin-panel-page">
+    <ThemeProvider theme={muiTheme}>
+      <div className="admin-panel-page ember-theme" data-theme={theme}>
         {isMobile && mobileOpen && (
           <div className="ap-overlay" onClick={() => setMobileOpen(false)} />
         )}
@@ -91,6 +103,7 @@ export default function AdminPanel() {
 
             <div className="ap-header-right">
               <span className="ap-user-badge">Gerente · {firstName}</span>
+              <ThemeToggle />
               <button
                 type="button"
                 className="ap-logout-btn"

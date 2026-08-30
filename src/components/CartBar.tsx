@@ -1,5 +1,7 @@
+import { ShoppingBag } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import { fmt } from '../data/menu'
+import Button from './ember/Button'
 
 export default function CartBar({ onOpen }: { onOpen: () => void }) {
   const { items } = useCart()
@@ -9,16 +11,28 @@ export default function CartBar({ onOpen }: { onOpen: () => void }) {
   if (count === 0) return null
 
   return (
-    <div className="fixed left-1/2 -translate-x-1/2 bottom-4 z-40 w-[92%] max-w-2xl bg-white shadow-lg rounded-full px-4 py-3 flex items-center justify-between">
+    <div
+      className="ember-theme fixed left-1/2 -translate-x-1/2 bottom-4 z-40 flex w-[92%] max-w-2xl items-center justify-between px-4 py-3"
+      style={{
+        borderRadius: 'var(--r-pill)', background: 'var(--surface-bar)',
+        backdropFilter: 'var(--blur-bar)', WebkitBackdropFilter: 'var(--blur-bar)',
+        boxShadow: 'var(--ring-inner), var(--shadow-card)',
+      }}
+    >
       <div className="flex items-center gap-3">
-        <div className="bg-green-100 text-green-700 rounded-full w-8 h-8 flex items-center justify-center font-semibold">{count}</div>
-        <div>
-          <div className="text-sm font-semibold">{fmt(total)}</div>
-          <div className="text-xs text-gray-500">{count} item{count>1?'s':''}</div>
+        <div
+          className="flex h-9 w-9 items-center justify-center rounded-full"
+          style={{ background: 'var(--gradient-cta)', color: 'var(--text-on-accent)' }}
+        >
+          <ShoppingBag size={16} />
+        </div>
+        <div className="text-left">
+          <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{fmt(total)}</div>
+          <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{count} item{count > 1 ? 's' : ''}</div>
         </div>
       </div>
 
-      <button onClick={onOpen} className="bg-green-600 text-white px-4 py-2 rounded-full">Ver pedido</button>
+      <Button size="sm" onClick={onOpen}>Ver pedido</Button>
     </div>
   )
 }

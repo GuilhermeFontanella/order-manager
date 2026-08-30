@@ -33,10 +33,10 @@ export default function MenuSections({
           current = (sec as HTMLElement).id.replace("sec-", "");
         }
       });
-      const tabs = tabsRef.current?.querySelectorAll(".tab") || [];
+      const tabs = tabsRef.current?.querySelectorAll(".menu-tab") || [];
       tabs.forEach((t) =>
         t.classList.toggle(
-          "active",
+          "is-active",
           (t as HTMLElement).dataset.cat === current,
         ),
       );
@@ -55,7 +55,7 @@ export default function MenuSections({
         {categories.map((cat, idx) => (
           <button
             key={cat.id}
-            className={`cursor-pointer inline-flex items-center rounded-4xl bg-amber-50 px-2 py-2 text-xs font-medium text-gray-600 inset-ring inset-ring-gray-500/10 hover:bg-gray-200 ${idx === 0 ? "active" : ""} shadow-sm`}
+            className={`menu-tab ${idx === 0 ? "is-active" : ""}`}
             data-cat={cat.id}
             onClick={() =>
               document
@@ -70,11 +70,17 @@ export default function MenuSections({
 
       <main className="px-4">
         {loading ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
+          <div
+            className="rounded-3xl p-6 text-center"
+            style={{ background: "var(--surface-card)", color: "var(--text-muted)", boxShadow: "var(--ring-inner)" }}
+          >
             Carregando cardápio...
           </div>
         ) : categories.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
+          <div
+            className="rounded-3xl p-6 text-center"
+            style={{ background: "var(--surface-card)", color: "var(--text-muted)", boxShadow: "var(--ring-inner)" }}
+          >
             Nenhum item encontrado para sua busca.
           </div>
         ) : (
@@ -87,7 +93,8 @@ export default function MenuSections({
             >
               <h2
                 id={`title-${cat.id}`}
-                className="font-bold text-lg mb-4 text-left"
+                className="mb-4 text-left"
+                style={{ font: "var(--text-h2)", color: "var(--text-primary)" }}
               >
                 {cat.nome}
               </h2>

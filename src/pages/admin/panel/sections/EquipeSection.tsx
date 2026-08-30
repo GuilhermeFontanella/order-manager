@@ -142,7 +142,7 @@ export default function EquipeSection() {
         </button>
       </div>
       {error && <p className="ap-card ap-inline-error">{error}</p>}
-      <div className="ap-card">
+      <div className="ap-card text-left">
         <div className="ap-list-toolbar">
           <div className="ap-search" style={{ width: "100%" }}>
             <Search size={15} />

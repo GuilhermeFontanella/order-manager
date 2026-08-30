@@ -1,7 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BrowserQRCodeReader } from '@zxing/browser'
+import { BrowserQRCodeReader, type IScannerControls } from '@zxing/browser'
+import type { Result } from '@zxing/library'
+import { QrCode } from 'lucide-react'
 import { parseMesaLink } from '../../lib/mesaSession'
+import '../../styles/ember-theme.css'
+import TextField from '../../components/ember/TextField'
+import Button from '../../components/ember/Button'
+
+const STATUS_MESSAGE: Record<string, string> = {
+  'inicializando': 'Inicializando câmera...',
+  'pedindo-permissao': 'Solicitando acesso à câmera...',
+  'escaneando': 'Aponte a câmera para o QR code da mesa.',
+  'erro': 'Erro ao acessar câmera — use a entrada manual abaixo.',
+  'nao-reconhecido': 'QR não reconhecido — use a entrada manual abaixo.',
+}
 
 export default function ScanQR() {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -9,11 +22,11 @@ export default function ScanQR() {
   const [status, setStatus] = useState<string>('inicializando')
   const [manualLink, setManualLink] = useState('')
   const [manualError, setManualError] = useState<string | null>(null)
-  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null)
+  const controlsRef = useRef<IScannerControls | null>(null)
 
   useEffect(() => {
     const codeReader = new BrowserQRCodeReader()
-    codeReaderRef.current = codeReader
+    let cancelled = false
 
     async function start() {
       try {
@@ -21,34 +34,26 @@ export default function ScanQR() {
         const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices()
         const deviceId = videoInputDevices.length ? videoInputDevices[0].deviceId : undefined
 
-        if (!videoRef.current) return
+        if (!videoRef.current || cancelled) return
 
         setStatus('escaneando')
-        codeReader.decodeFromVideoDevice(deviceId, videoRef.current, (result: any) => {
+        const controls = await codeReader.decodeFromVideoDevice(deviceId, videoRef.current, (result?: Result) => {
           if (result) {
-            // resultado do QR
-            try {
-              const text = typeof result.getText === 'function' ? result.getText() : String(result)
-              handleFound(text)
-            } catch {
-              handleFound(String(result))
-            }
+            handleFound(result.getText())
           }
         })
+        controlsRef.current = controls
       } catch (e) {
         console.warn('Não foi possível acessar a câmera ou iniciar leitor de QR', e)
-        setStatus('erro')
+        if (!cancelled) setStatus('erro')
       }
     }
 
     start()
 
     return () => {
-      // Parar leitura: parar tracks de vídeo é suficiente para interromper o decode
-      if (videoRef.current && videoRef.current.srcObject) {
-        const s = videoRef.current.srcObject as MediaStream
-        s.getTracks().forEach(t => t.stop())
-      }
+      cancelled = true
+      controlsRef.current?.stop()
     }
   }, [])
 
@@ -59,11 +64,7 @@ export default function ScanQR() {
       return
     }
 
-    // parar a câmera (tracks) já interrompe o leitor
-    if (videoRef.current && videoRef.current.srcObject) {
-      const s = videoRef.current.srcObject as MediaStream
-      s.getTracks().forEach(t => t.stop())
-    }
+    controlsRef.current?.stop()
     navigate(`/r/${mesa.tenantSlug}/mesa/${mesa.qrCodeToken}`, { replace: true })
   }
 
@@ -78,32 +79,48 @@ export default function ScanQR() {
   }
 
   return (
-    <div>
-      <h1>Escanear QR (pré-visualização)</h1>
+    <div className="ember-theme relative min-h-screen overflow-hidden">
+      <div
+        aria-hidden
+        style={{ position: 'absolute', top: -140, left: -100, width: 460, height: 460, background: 'var(--gradient-ember-glow)', pointerEvents: 'none' }}
+      />
+      <div className="relative mx-auto max-w-md px-4 pt-10 pb-10">
+        <div className="flex items-center gap-3" style={{ marginBottom: 'var(--sp-6)' }}>
+          <div
+            className="flex h-11 w-11 items-center justify-center"
+            style={{ borderRadius: 'var(--r-pill)', background: 'var(--gradient-cta)', color: 'var(--text-on-accent)' }}
+          >
+            <QrCode size={20} />
+          </div>
+          <h1 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Escanear mesa</h1>
+        </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <video ref={videoRef} style={{ width: '100%', maxWidth: 480, borderRadius: 8 }} />
-        {status === 'pedindo-permissao' && <p>Solicitando acesso à câmera...</p>}
-        {status === 'escaneando' && <p>Aponte a câmera para o QR.</p>}
-        {status === 'erro' && <p>Erro ao acessar câmera — use entrada manual abaixo.</p>}
-        {status === 'nao-reconhecido' && <p>QR não reconhecido — use entrada manual abaixo.</p>}
+        <div
+          className="relative overflow-hidden"
+          style={{ borderRadius: 'var(--r-card)', background: 'var(--surface-card)', boxShadow: 'var(--ring-inner), var(--shadow-card)', aspectRatio: '1 / 1' }}
+        >
+          <video ref={videoRef} className="h-full w-full object-cover" />
+        </div>
+
+        <p className="mt-4 text-center" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
+          {STATUS_MESSAGE[status] ?? status}
+        </p>
+
+        <div className="mt-8" style={{ paddingTop: 'var(--sp-6)', borderTop: '1px solid var(--border-hairline)' }}>
+          <p className="mb-3" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
+            Se o QR não for detectado automaticamente, cole o link da mesa:
+          </p>
+          <TextField
+            value={manualLink}
+            onChange={e => setManualLink(e.target.value)}
+            placeholder="Ex: https://.../r/seu-restaurante/mesa/xxxxx"
+          />
+          <Button fullWidth style={{ marginTop: 'var(--sp-3)' }} onClick={useManual}>Usar mesa</Button>
+          {manualError && (
+            <p className="mt-3" style={{ color: 'var(--danger)', font: 'var(--text-body)' }}>{manualError}</p>
+          )}
+        </div>
       </div>
-
-      <div>
-        <p>Se o QR não for detectado automaticamente, cole o link da mesa:</p>
-        <input
-          value={manualLink}
-          onChange={e => setManualLink(e.target.value)}
-          placeholder="Ex: https://.../r/seu-restaurante/mesa/xxxxx"
-          style={{ width: '100%', maxWidth: 420 }}
-        />
-        <button onClick={useManual} style={{ marginLeft: 8 }}>Usar mesa</button>
-        {manualError && <p style={{ color: '#c00' }}>{manualError}</p>}
-      </div>
-
-      <p style={{ marginTop: 12, color: '#666' }}>
-        A leitura automática usa <strong>@zxing/browser</strong>.
-      </p>
     </div>
   )
 }

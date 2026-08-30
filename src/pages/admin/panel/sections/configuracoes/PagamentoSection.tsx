@@ -24,7 +24,7 @@ export default function PagamentoSection() {
 
   return (
     <div className="ap-settings-stack">
-      <div className="ap-card">
+      <div className="ap-card text-left">
         <div className="ap-card-title">Formas de pagamento aceitas</div>
         <div className="ap-card-sub">Controla o que o cliente pode escolher ao fechar o pedido no cardápio digital.</div>
 
@@ -48,7 +48,7 @@ export default function PagamentoSection() {
       </div>
 
       <div className="ap-card ap-locked-card">
-        <div className="ap-group-header">
+        <div className="ap-group-header text-left">
           <div>
             <div className="ap-card-title">Integrações de pagamento</div>
             <div className="ap-card-sub" style={{ marginBottom: 0 }}>
