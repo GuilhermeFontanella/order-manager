@@ -1,11 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import type { Item } from '../data/menu'
+import type { Item, SelecaoOpcao } from '../data/menu'
 
-type CartItem = {
+export type CartItem = {
   id: string
   item: Item
   qty: number
   obs?: string
+  selecoes?: SelecaoOpcao[]
+}
+
+export function cartItemUnitPrice(it: Pick<CartItem, 'item' | 'selecoes'>) {
+  const extra = (it.selecoes ?? []).reduce((s, sel) => s + sel.precoAdicional, 0)
+  return it.item.preco + extra
 }
 
 type ConsentState = 'unknown' | 'accepted' | 'declined'
@@ -14,7 +20,7 @@ type CartContextType = {
   items: CartItem[]
   consent: ConsentState
   showRestoredNotice: boolean
-  add: (item: Item, qty?: number, obs?: string) => void
+  add: (item: Item, qty?: number, obs?: string, selecoes?: SelecaoOpcao[]) => void
   remove: (id: string) => void
   updateQty: (id: string, qty: number) => void
   clear: () => void
@@ -94,13 +100,23 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     writeCartCookie(items, consent)
   }, [items, consent])
 
-  function add(item: Item, qty = 1, obs?: string) {
+  function add(item: Item, qty = 1, obs?: string, selecoes?: SelecaoOpcao[]) {
     setItems(prev => {
-      const existing = prev.find(p => p.item.id === item.id)
+      const selecoesKey = JSON.stringify(
+        [...(selecoes ?? [])].sort((a, b) => a.opcaoId.localeCompare(b.opcaoId)),
+      )
+      const existing = prev.find(
+        p =>
+          p.item.id === item.id &&
+          (p.obs ?? '') === (obs ?? '') &&
+          JSON.stringify(
+            [...(p.selecoes ?? [])].sort((a, b) => a.opcaoId.localeCompare(b.opcaoId)),
+          ) === selecoesKey,
+      )
       if (existing) {
-        return prev.map(p => p.item.id === item.id ? { ...p, qty: p.qty + qty } : p)
+        return prev.map(p => p.id === existing.id ? { ...p, qty: p.qty + qty } : p)
       }
-      return [...prev, { id: `${item.id}-${Date.now()}`, item, qty, obs }]
+      return [...prev, { id: `${item.id}-${Date.now()}`, item, qty, obs, selecoes }]
     })
   }
 

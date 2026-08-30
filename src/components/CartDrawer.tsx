@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useCart } from '../context/CartContext'
+import { useCart, cartItemUnitPrice } from '../context/CartContext'
 import { fmt } from '../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Trash, WalletCards, X } from 'lucide-react';
@@ -9,7 +9,7 @@ import IconButton from './ember/IconButton'
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { items, remove, updateQty } = useCart();
-  const total = items.reduce((s, it) => s + it.item.preco * it.qty, 0)
+  const total = items.reduce((s, it) => s + cartItemUnitPrice(it) * it.qty, 0)
   const navigate = useNavigate()
 
   if (!open) return null
@@ -47,7 +47,12 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
               >
                 <div className="text-left min-w-0">
                   <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{it.item.nome}</div>
-                  <div className="pt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{fmt(it.item.preco)}</div>
+                  {it.selecoes && it.selecoes.length > 0 && (
+                    <div className="pt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
+                      {it.selecoes.map(s => s.opcaoNome).join(', ')}
+                    </div>
+                  )}
+                  <div className="pt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{fmt(cartItemUnitPrice(it))}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <QuantityStepper value={it.qty} min={0} size={32} onChange={(qty) => updateQty(it.id, qty)} />

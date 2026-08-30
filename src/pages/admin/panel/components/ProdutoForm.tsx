@@ -141,13 +141,19 @@ export default function ProdutoForm({
           </option>
         ))}
       </select>
+      <div className="flex items-center">
+        <div className="shrink-0 text-base text-gray-500 select-none sm:text-sm/6 mr-2">R$</div>
       <input
         className="ap-input"
         value={form.preco}
         onChange={event => setForm(prev => ({ ...prev, preco: event.target.value }))}
-        placeholder="Preço (ex: 25.90)"
+        placeholder="Preço (ex: R$ 25.90)"
         inputMode="decimal"
+        type="number"
+        min={0}
+        max={9999.99}
       />
+      </div>
       <button
         type="button"
         className={`ap-btn ${form.disponivel ? 'ap-btn-primary' : 'ap-btn-ghost'}`}
@@ -175,7 +181,7 @@ export default function ProdutoForm({
         />
       </div>
 
-      <div style={{ gridColumn: '1 / -1' }}>
+      <div style={{ gridColumn: '1 / -1', marginBottom: '16px' }}>
         <div className="ap-card-title" style={{ marginTop: 8 }}>
           Insumos utilizados
         </div>

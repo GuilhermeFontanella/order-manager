@@ -249,7 +249,7 @@ export default function CardapioSection() {
               <p className="ap-card-sub" style={{ marginBottom: 0 }}>Nenhum item nesta categoria ainda.</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table className="ap-table">
+                <table className="ap-table text-left">
                   <thead>
                     <tr>
                       <th>Item</th>

@@ -57,7 +57,7 @@ export default function OpcaoGruposEditor({
             </button>
           </div>
 
-          <div className="ap-subcard-row">
+          <div className="ap-subcard-row pt-2 mb-4">
             <label className="ap-radio-label">
               <input
                 type="radio"
@@ -87,7 +87,7 @@ export default function OpcaoGruposEditor({
           </div>
 
           {grupo.opcoes.map((opcao, opcaoIndex) => (
-            <div key={opcaoIndex} className="ap-opcao-row">
+            <div key={opcaoIndex} className="ap-opcao-row mb-3">
               <input
                 className="ap-input"
                 style={{ flex: 1 }}
@@ -122,7 +122,7 @@ export default function OpcaoGruposEditor({
         </div>
       ))}
 
-      <button type="button" className="ap-btn ap-btn-ghost" onClick={addGrupo}>
+      <button type="button" className="ap-btn ap-btn-ghost mt-8" onClick={addGrupo}>
         <Plus size={14} />
         Adicionar grupo de opção
       </button>

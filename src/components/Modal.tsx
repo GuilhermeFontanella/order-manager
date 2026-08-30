@@ -24,7 +24,7 @@ export default function Modal({ open, title, description, onClose, maxWidth = 48
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 py-8 text-left">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -1,4 +1,4 @@
-import type { Category, Item } from "../data/menu";
+import type { Category, Item, OpcaoGrupo, OpcaoValor } from "../data/menu";
 import { resolveMediaUrl } from "./apiClient";
 
 export function asText(value: unknown): string | undefined {
@@ -16,6 +16,31 @@ export function asNumber(value: unknown): number {
     if (Number.isFinite(parsed)) return Math.round(parsed * 100);
   }
   return 0;
+}
+
+function normalizeOpcaoValor(raw: Record<string, unknown>): OpcaoValor | undefined {
+  const nome = asText(raw.nome) ?? asText(raw.name);
+  if (!nome) return undefined;
+  return {
+    id: asText(raw.id) ?? nome,
+    nome,
+    precoAdicional: asNumber(raw.precoAdicional ?? raw.preco ?? 0),
+  };
+}
+
+function normalizeOpcaoGrupo(raw: Record<string, unknown>): OpcaoGrupo | undefined {
+  const nome = asText(raw.nome) ?? asText(raw.name);
+  if (!nome) return undefined;
+  const opcoesRaw = Array.isArray(raw.opcoes) ? raw.opcoes : [];
+  return {
+    id: asText(raw.id) ?? nome,
+    nome,
+    multiplaEscolha: raw.multiplaEscolha === true,
+    obrigatorio: raw.obrigatorio === true,
+    opcoes: (opcoesRaw as Array<Record<string, unknown>>)
+      .map(normalizeOpcaoValor)
+      .filter((opcao): opcao is OpcaoValor => Boolean(opcao)),
+  };
 }
 
 export function normalizeItem(raw: Record<string, unknown>): Item {
@@ -43,9 +68,15 @@ export function normalizeItem(raw: Record<string, unknown>): Item {
     emoji: asText(raw.emoji) ?? asText(raw.icon) ?? "🍽️",
     disponivel:
       raw.disponivel === false || raw.available === false ? false : true,
-    grupos: Array.isArray(raw.grupos)
-      ? (raw.grupos as unknown[]).filter(Boolean)
-      : [],
+    grupos: Array.isArray(raw.gruposOpcao)
+      ? (raw.gruposOpcao as Array<Record<string, unknown>>)
+          .map(normalizeOpcaoGrupo)
+          .filter((grupo): grupo is OpcaoGrupo => Boolean(grupo))
+      : Array.isArray(raw.grupos)
+        ? (raw.grupos as Array<Record<string, unknown>>)
+            .map(normalizeOpcaoGrupo)
+            .filter((grupo): grupo is OpcaoGrupo => Boolean(grupo))
+        : [],
     fotos: Array.isArray(raw.fotos)
       ? (raw.fotos as string[]).map(resolveMediaUrl)
       : Array.isArray(raw.imagens)

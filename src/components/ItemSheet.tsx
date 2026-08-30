@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
-import { useMemo, useState } from 'react'
-import type { Item } from '../data/menu'
+import { useEffect, useMemo, useState } from 'react'
+import type { Item, SelecaoOpcao } from '../data/menu'
 import { fmt } from '../data/menu'
 import OptionRow from './ember/OptionRow'
 import SegmentedControl from './ember/SegmentedControl'
+import MultiSelectControl from './ember/MultiSelectControl'
 import QuantityStepper from './ember/QuantityStepper'
 import Button from './ember/Button'
 import Badge from './ember/Badge'
@@ -12,35 +13,73 @@ type Props = {
   item: Item | null
   open: boolean
   onClose: () => void
-  onAdd: (item: Item, qty?: number, obs?: string) => void
+  onAdd: (item: Item, qty: number, obs: string, selecoes: SelecaoOpcao[]) => void
 }
 
-const defaultOpcao = {
-  nome: 'Ponto da carne',
-  obrigatorio: true,
-  opcoes: ['Mal passada', 'Ao ponto', 'Bem passada'],
+function optionLabel(nome: string, precoAdicional: number) {
+  return precoAdicional > 0 ? `${nome} (+${fmt(precoAdicional)})` : nome
 }
 
 export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
   const [qty, setQty] = useState(1)
   const [obs, setObs] = useState('')
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selecoesPorGrupo, setSelecoesPorGrupo] = useState<Record<string, string[]>>({})
 
-  const optionGroup = useMemo(() => {
-    if (!item) return null
-    if (item.grupos && item.grupos.length > 0) {
-      return item.grupos[0]
+  useEffect(() => {
+    if (item) {
+      setQty(1)
+      setObs('')
+      setSelecoesPorGrupo({})
     }
-    if (item.id.startsWith('p')) {
-      return defaultOpcao
+  }, [item?.id])
+
+  const grupos = item?.grupos ?? []
+
+  const extraPorUnidade = useMemo(() => {
+    return grupos.reduce((total, grupo) => {
+      const selecionados = selecoesPorGrupo[grupo.id] ?? []
+      const soma = grupo.opcoes
+        .filter(o => selecionados.includes(o.id))
+        .reduce((s, o) => s + o.precoAdicional, 0)
+      return total + soma
+    }, 0)
+  }, [grupos, selecoesPorGrupo])
+
+  if (!open || !item) return null
+
+  const gruposObrigatoriosPendentes = grupos.filter(
+    grupo => grupo.obrigatorio && (selecoesPorGrupo[grupo.id]?.length ?? 0) === 0,
+  )
+  const canAdd = gruposObrigatoriosPendentes.length === 0
+
+  const precoUnitario = item.preco + extraPorUnidade
+
+  function toggleUnica(grupoId: string, opcaoId: string) {
+    setSelecoesPorGrupo(prev => ({ ...prev, [grupoId]: [opcaoId] }))
+  }
+
+  function toggleMultipla(grupoId: string, opcaoIds: string[]) {
+    setSelecoesPorGrupo(prev => ({ ...prev, [grupoId]: opcaoIds }))
+  }
+
+  function buildSelecoes(): SelecaoOpcao[] {
+    const resultado: SelecaoOpcao[] = []
+    for (const grupo of grupos) {
+      const selecionados = selecoesPorGrupo[grupo.id] ?? []
+      for (const opcao of grupo.opcoes) {
+        if (selecionados.includes(opcao.id)) {
+          resultado.push({
+            grupoId: grupo.id,
+            grupoNome: grupo.nome,
+            opcaoId: opcao.id,
+            opcaoNome: opcao.nome,
+            precoAdicional: opcao.precoAdicional,
+          })
+        }
+      }
     }
-    return null
-  }, [item])
-
-  if (!open || !item) return null;
-
-  const isOptionRequired = optionGroup?.obrigatorio === true
-  const canAdd = !isOptionRequired || Boolean(selectedOption)
+    return resultado
+  }
 
   return (
     <div className="ember-theme fixed inset-0 z-50">
@@ -68,35 +107,45 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
               className="flex h-16 w-16 items-center justify-center text-3xl"
               style={{ borderRadius: 'var(--r-image)', background: 'var(--ink-2)', boxShadow: 'var(--ring-inner)' }}
             >
-              {item.emoji ?? '🍽️'}
+              <img src={item.fotos?.[0]} alt={item.nome} className="h-full w-full object-cover rounded-2xl" />
             </div>
             <div className="flex-1 text-left">
               <h3 style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{item.nome}</h3>
               {item.desc && <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</p>}
             </div>
-            <div className="text-right" style={{ font: 'var(--text-title)', fontSize: 'var(--fs-price)', color: 'var(--text-price)' }}>{fmt(item.preco)}</div>
+            <div className="text-right" style={{ font: 'var(--text-title)', fontSize: 'var(--fs-price)', color: 'var(--text-price)' }}>{fmt(precoUnitario)}</div>
           </div>
         </div>
 
-        {optionGroup ? (
-          <div className="mt-5 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
+        {grupos.map(grupo => (
+          <div key={grupo.id} className="mt-5 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
             <div className="flex items-center justify-between gap-3 text-left">
               <div>
-                <p style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{optionGroup.nome}</p>
-                <p className="mt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Selecione uma opção para continuar.</p>
+                <p style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{grupo.nome}</p>
+                <p className="mt-1" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
+                  {grupo.multiplaEscolha ? 'Selecione uma ou mais opções.' : 'Selecione uma opção para continuar.'}
+                </p>
               </div>
-              {optionGroup.obrigatorio && <Badge tone="spicy">Obrigatório</Badge>}
+              {grupo.obrigatorio && <Badge tone="spicy">Obrigatório</Badge>}
             </div>
 
             <div className="mt-4">
-              <SegmentedControl
-                options={optionGroup.opcoes.map((o: string) => ({ value: o, label: o }))}
-                value={selectedOption}
-                onChange={setSelectedOption}
-              />
+              {grupo.multiplaEscolha ? (
+                <MultiSelectControl
+                  options={grupo.opcoes.map(o => ({ value: o.id, label: optionLabel(o.nome, o.precoAdicional) }))}
+                  value={selecoesPorGrupo[grupo.id] ?? []}
+                  onChange={value => toggleMultipla(grupo.id, value)}
+                />
+              ) : (
+                <SegmentedControl
+                  options={grupo.opcoes.map(o => ({ value: o.id, label: optionLabel(o.nome, o.precoAdicional) }))}
+                  value={selecoesPorGrupo[grupo.id]?.[0] ?? null}
+                  onChange={value => toggleUnica(grupo.id, value)}
+                />
+              )}
             </div>
           </div>
-        ) : null}
+        ))}
 
         <div className="mt-5 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
           <label style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>Observação</label>
@@ -123,11 +172,11 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
           fullWidth size="lg" disabled={!canAdd}
           onClick={() => {
             if (!canAdd) return
-            onAdd(item, qty, obs)
+            onAdd(item, qty, obs, buildSelecoes())
             onClose()
           }}
         >
-          {canAdd ? 'Adicionar ao pedido' : 'Selecione as opções obrigatórias'}
+          {canAdd ? `Adicionar ao pedido · ${fmt(precoUnitario * qty)}` : 'Selecione as opções obrigatórias'}
         </Button>
       </motion.div>
     </div>

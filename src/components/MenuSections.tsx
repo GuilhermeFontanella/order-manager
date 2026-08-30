@@ -51,7 +51,7 @@ export default function MenuSections({
 
   return (
     <div>
-      <div ref={tabsRef} className="flex gap-2 overflow-x-auto py-2 px-4 -mx-4">
+      {/* <div ref={tabsRef} className="flex gap-2 overflow-x-auto py-2 px-4 -mx-4">
         {categories.map((cat, idx) => (
           <button
             key={cat.id}
@@ -66,7 +66,7 @@ export default function MenuSections({
             {cat.nome}
           </button>
         ))}
-      </div>
+      </div> */}
 
       <main className="px-4">
         {loading ? (
@@ -120,8 +120,8 @@ export default function MenuSections({
         item={selected}
         open={!!selected && !showDetails}
         onClose={() => setSelected(null)}
-        onAdd={(item, qty = 1) => {
-          add(item, qty);
+        onAdd={(item, qty, obs, selecoes) => {
+          add(item, qty, obs, selecoes);
           setSelected(null);
         }}
       />

@@ -1,11 +1,11 @@
 import { ShoppingBag } from 'lucide-react'
-import { useCart } from '../context/CartContext'
+import { useCart, cartItemUnitPrice } from '../context/CartContext'
 import { fmt } from '../data/menu'
 import Button from './ember/Button'
 
 export default function CartBar({ onOpen }: { onOpen: () => void }) {
   const { items } = useCart()
-  const total = items.reduce((s, it) => s + it.item.preco * it.qty, 0)
+  const total = items.reduce((s, it) => s + cartItemUnitPrice(it) * it.qty, 0)
   const count = items.reduce((s, it) => s + it.qty, 0)
 
   if (count === 0) return null

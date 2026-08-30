@@ -1,3 +1,25 @@
+export type OpcaoValor = {
+  id: string
+  nome: string
+  precoAdicional: number // centavos
+}
+
+export type OpcaoGrupo = {
+  id: string
+  nome: string
+  multiplaEscolha: boolean
+  obrigatorio: boolean
+  opcoes: OpcaoValor[]
+}
+
+export type SelecaoOpcao = {
+  grupoId: string
+  grupoNome: string
+  opcaoId: string
+  opcaoNome: string
+  precoAdicional: number // centavos
+}
+
 export type Item = {
   id: string
   nome: string
@@ -5,7 +27,7 @@ export type Item = {
   preco: number // centavos
   emoji?: string
   disponivel?: boolean
-  grupos?: any[]
+  grupos?: OpcaoGrupo[]
   fotos?: string[]
   ingredientes?: string[]
 }

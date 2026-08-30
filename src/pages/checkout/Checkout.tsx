@@ -1,6 +1,6 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Wallet } from 'lucide-react'
-import { useCart } from '../../context/CartContext'
+import { useCart, cartItemUnitPrice } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { readMesaSession } from '../../lib/mesaSession'
@@ -119,7 +119,7 @@ function formatValidade(value: string) {
 export default function Checkout() {
   const { items, clear } = useCart()
   const navigate = useNavigate()
-  const total = items.reduce((s, it) => s + it.item.preco * it.qty, 0)
+  const total = items.reduce((s, it) => s + cartItemUnitPrice(it) * it.qty, 0)
   const itemCount = items.reduce((s, it) => s + it.qty, 0)
 
   const [step, setStep] = useState<Step>('identificacao')
@@ -165,6 +165,11 @@ export default function Checkout() {
           produtoId: it.item.id,
           quantidade: it.qty,
           observacao: it.obs || undefined,
+          opcoesSelecionadas: it.selecoes?.map(s => ({
+            grupoOpcaoNome: s.grupoNome,
+            opcaoNome: s.opcaoNome,
+            precoAdicional: s.precoAdicional,
+          })),
         })),
       })
       setPedido(created)
@@ -309,11 +314,16 @@ export default function Checkout() {
             {items.map(it => (
               <li key={it.id}>
                 <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div className="text-left">
+                  <div className="text-left w-8/12">
                     <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{it.item.nome}</div>
-                    <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{it.qty} x {fmt(it.item.preco)}</div>
+                    {it.selecoes && it.selecoes.length > 0 && (
+                      <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
+                        {it.selecoes.map(s => s.opcaoNome).join(', ')}
+                      </div>
+                    )}
+                    <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{it.qty} x {fmt(cartItemUnitPrice(it))}</div>
                   </div>
-                  <div style={{ font: 'var(--text-title)', color: 'var(--text-price)' }}>{fmt(it.item.preco * it.qty)}</div>
+                  <div style={{ font: 'var(--text-title)', color: 'var(--text-price)' }}>{fmt(cartItemUnitPrice(it) * it.qty)}</div>
                 </GlassCard>
               </li>
             ))}
