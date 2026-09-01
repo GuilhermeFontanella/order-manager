@@ -114,12 +114,16 @@ export default function ProdutosAdmin() {
             placeholder="Categoria (ex: Lanches)"
             className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500"
           />
-          <input
-            value={form.descricao}
-            onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
-            placeholder="Descrição (opcional)"
-            className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500 sm:col-span-2"
-          />
+          <div className="flex flex-col gap-1 sm:col-span-2">
+            <input
+              value={form.descricao}
+              onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
+              placeholder="Descrição (opcional)"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-slate-900 outline-none focus:border-emerald-500"
+              maxLength={100}
+            />
+            <span className="text-right text-xs text-slate-400">{form.descricao.length}/100</span>
+          </div>
           <button
             type="submit"
             disabled={creating || !form.nome.trim() || !form.preco}

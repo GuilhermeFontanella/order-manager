@@ -47,6 +47,7 @@ export type Pedido = {
   pagoEm: string | null;
   prontoEm: string | null;
   retiradoEm: string | null;
+  alteracaoManual: { usuario: string; data: string; motivo: string } | null;
   itens: Array<{
     id: string;
     produtoId: string;

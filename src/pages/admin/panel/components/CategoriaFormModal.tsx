@@ -41,13 +41,19 @@ export default function CategoriaFormModal({
           onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))}
           placeholder="Nome da categoria (ex: Lanches)"
         />
-        <textarea
-          className="ap-input"
-          style={{ minHeight: 80, resize: 'vertical' }}
-          value={form.descricao}
-          onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
-          placeholder="Descrição exibida no cardápio (opcional)"
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <textarea
+            className="ap-input"
+            style={{ minHeight: 80, resize: 'vertical' }}
+            value={form.descricao}
+            onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
+            placeholder="Descrição exibida no cardápio (opcional)"
+            maxLength={100}
+          />
+          <span className="ap-card-sub" style={{ margin: 0, textAlign: 'right' }}>
+            {form.descricao?.length ?? 0}/100
+          </span>
+        </div>
 
         {error && <p style={{ color: 'var(--ap-red)', fontSize: 13, margin: 0 }}>{error}</p>}
 

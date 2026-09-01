@@ -49,3 +49,10 @@ export async function updatePedidoStatus(id: string, status: StatusPedido): Prom
   const response = await api.patch<Pedido>(`/pedidos/${id}/status`, { status })
   return response.data
 }
+
+export type StatusPedidoManual = 'RETIRADO' | 'CANCELADO'
+
+export async function updatePedidoStatusManual(id: string, status: StatusPedidoManual, motivo: string): Promise<Pedido> {
+  const response = await api.patch<Pedido>(`/pedidos/${id}/status-manual`, { status, motivo })
+  return response.data
+}

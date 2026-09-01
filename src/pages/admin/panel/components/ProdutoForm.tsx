@@ -121,13 +121,19 @@ export default function ProdutoForm({
         onChange={event => setForm(prev => ({ ...prev, nome: event.target.value }))}
         placeholder="Nome do item (ex: X-Burger)"
       />
-      <textarea
-        className="ap-input"
-        style={{ gridColumn: '1 / -1', minHeight: 64, resize: 'vertical' }}
-        value={form.descricao}
-        onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
-        placeholder="Descrição (obrigatória)"
-      />
+      <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <textarea
+          className="ap-input"
+          style={{ minHeight: 64, resize: 'vertical' }}
+          value={form.descricao}
+          onChange={event => setForm(prev => ({ ...prev, descricao: event.target.value }))}
+          placeholder="Descrição (obrigatória)"
+          maxLength={100}
+        />
+        <span className="ap-card-sub" style={{ margin: 0, textAlign: 'right' }}>
+          {form.descricao.length}/100
+        </span>
+      </div>
       <select
         className="ap-select"
         value={form.categoriaId}

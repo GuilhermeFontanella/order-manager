@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Pencil, Search } from 'lucide-react'
 import Accordion from '../../../../components/Accordion'
 import MultiSelectDropdown from '../../../../components/MultiSelectDropdown'
 import Pagination from '../components/Pagination'
-import { listPedidosPaginado } from '../../../../services/pedidosStaff'
+import PedidoDetalheModal from '../components/PedidoDetalheModal'
+import { listPedidosPaginado, updatePedidoStatusManual, type StatusPedidoManual } from '../../../../services/pedidosStaff'
 import { listMesas, type Mesa } from '../../../../services/mesas'
 import type { MetodoPagamento, Pedido, StatusPedido } from '../../../../services/storefront'
 import { fmt } from '../../../../data/menu'
+import { getApiErrorMessage } from '../../../../services/apiClient'
 
 const STATUS_LABEL: Record<StatusPedido, string> = {
   AGUARDANDO_PAGAMENTO: 'Aguardando pagamento',
@@ -50,6 +52,11 @@ export default function PedidosSection() {
   const [dataDe, setDataDe] = useState('')
   const [dataAte, setDataAte] = useState('')
   const [page, setPage] = useState(1)
+
+  const [pedidoSelecionado, setPedidoSelecionado] = useState<Pedido | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [modalError, setModalError] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => setBuscaDebounced(busca.trim()), BUSCA_DEBOUNCE_MS)
@@ -122,6 +129,27 @@ export default function PedidosSection() {
     setMesasFiltro(new Set())
     setDataDe('')
     setDataAte('')
+  }
+
+  function abrirDetalhePedido(pedido: Pedido) {
+    setPedidoSelecionado(pedido)
+    setModalError(null)
+    setModalOpen(true)
+  }
+
+  async function handleAlterarStatusManual(status: StatusPedidoManual, motivo: string) {
+    if (!pedidoSelecionado) return
+    setSaving(true)
+    setModalError(null)
+    try {
+      const atualizado = await updatePedidoStatusManual(pedidoSelecionado.id, status, motivo)
+      setPedidos(prev => prev.map(p => (p.id === atualizado.id ? atualizado : p)))
+      setModalOpen(false)
+    } catch (err) {
+      setModalError(getApiErrorMessage(err, 'Não foi possível alterar o status do pedido.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -224,6 +252,7 @@ export default function PedidosSection() {
                   <th>Pagamento</th>
                   <th>Status</th>
                   <th>Horário</th>
+                  <th aria-label="Ações" />
                 </tr>
               </thead>
               <tbody>
@@ -243,6 +272,18 @@ export default function PedidosSection() {
                       </span>
                     </td>
                     <td className="ap-table-sub">{horarioLabel(pedido.criadoEm)}</td>
+                    <td>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          className="ap-btn ap-btn-ghost ap-btn-icon"
+                          onClick={() => abrirDetalhePedido(pedido)}
+                          aria-label="Ver pedido"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -252,6 +293,15 @@ export default function PedidosSection() {
       </div>
 
       <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+
+      <PedidoDetalheModal
+        open={modalOpen}
+        pedido={pedidoSelecionado}
+        saving={saving}
+        error={modalError}
+        onSubmit={handleAlterarStatusManual}
+        onClose={() => setModalOpen(false)}
+      />
     </div>
   )
 }

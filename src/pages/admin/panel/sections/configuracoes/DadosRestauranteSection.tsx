@@ -91,6 +91,7 @@ export default function DadosRestauranteSection() {
             className="ap-input"
             value={nome}
             onChange={event => setNome(event.target.value)}
+            maxLength={15}
           />
         </div>
 
