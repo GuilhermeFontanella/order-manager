@@ -1,14 +1,35 @@
-import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Wallet } from 'lucide-react'
 import { useCart, cartItemUnitPrice } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { readMesaSession } from '../../lib/mesaSession'
-import { confirmarPagamento, createPedido, type MetodoPagamento, type PedidoCriado } from '../../services/storefront'
+import { buscarStatusPagamento, createPedido, type MetodoPagamento, type PedidoCriado } from '../../services/storefront'
 import '../../styles/ember-theme.css'
 import IconButton from '../../components/ember/IconButton'
 import Button from '../../components/ember/Button'
 import TextField from '../../components/ember/TextField'
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    MercadoPago: any
+  }
+}
+
+const MP_PUBLIC_KEY = 'APP_USR-17c43e80-89bd-4ca5-b0ed-ab2d4f5a25c8'
+
+function useMercadoPagoSDK() {
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => {
+    if (window.MercadoPago) { setLoaded(true); return }
+    const script = document.createElement('script')
+    script.src = 'https://sdk.mercadopago.com/js/v2'
+    script.onload = () => setLoaded(true)
+    document.head.appendChild(script)
+  }, [])
+  return loaded
+}
 
 type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao'
 
@@ -61,51 +82,6 @@ function ItemSummaryCard({ itemCount, total }: { itemCount: number; total: numbe
   )
 }
 
-function PixQrCode() {
-  const size = 21
-  const grid = useMemo(() => {
-    let seed = 42
-    function rand() {
-      seed = (seed + 0x6d2b79f5) | 0
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-    }
-
-    const cells: boolean[][] = Array.from({ length: size }, () =>
-      Array.from({ length: size }, () => rand() > 0.5)
-    )
-
-    const drawFinder = (ox: number, oy: number) => {
-      for (let y = 0; y < 7; y++) {
-        for (let x = 0; x < 7; x++) {
-          const border = x === 0 || x === 6 || y === 0 || y === 6
-          const innerFill = x >= 2 && x <= 4 && y >= 2 && y <= 4
-          cells[oy + y][ox + x] = border || innerFill
-        }
-      }
-    }
-    drawFinder(0, 0)
-    drawFinder(size - 7, 0)
-    drawFinder(0, size - 7)
-
-    return cells
-  }, [])
-
-  return (
-    <div
-      className="grid"
-      style={{ gridTemplateColumns: `repeat(${size}, 1fr)`, width: 176, height: 176, background: '#fff', borderRadius: 'var(--r-sm)' }}
-    >
-      {grid.flatMap((row, y) =>
-        row.map((filled, x) => (
-          <div key={`${x}-${y}`} style={{ background: filled ? '#0e0907' : '#fff' }} />
-        ))
-      )}
-    </div>
-  )
-}
-
 function formatCardNumber(value: string) {
   const digits = value.replace(/\D/g, '').slice(0, 16)
   return (digits.match(/.{1,4}/g) ?? []).join(' ')
@@ -119,40 +95,82 @@ function formatValidade(value: string) {
 export default function Checkout() {
   const { items, clear } = useCart()
   const navigate = useNavigate()
+  const mpLoaded = useMercadoPagoSDK()
   const total = items.reduce((s, it) => s + cartItemUnitPrice(it) * it.qty, 0)
   const itemCount = items.reduce((s, it) => s + it.qty, 0)
 
   const [step, setStep] = useState<Step>('identificacao')
   const [nome, setNome] = useState('')
-
   const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento | null>(null)
   const [pedido, setPedido] = useState<PedidoCriado | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
-  const [confirming, setConfirming] = useState(false)
-  const [confirmError, setConfirmError] = useState<string | null>(null)
 
   const [copied, setCopied] = useState(false)
-  const pixCode = '00020126360014BR.GOV.BCB.PIX0114+55119999999952040000530398654' + Math.round(total)
+  const pixCode = pedido?.pagamento?.pixQrCode ?? ''
+  const pixQrBase64 = pedido?.pagamento?.pixQrCodeBase64 ?? ''
+
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [cardNumber, setCardNumber] = useState('')
   const [cardName, setCardName] = useState('')
   const [cardValidade, setCardValidade] = useState('')
   const [cardCvv, setCardCvv] = useState('')
+  const [cardError, setCardError] = useState<string | null>(null)
+  const [processingCard, setProcessingCard] = useState(false)
+
   const cardValid =
     cardNumber.replace(/\D/g, '').length === 16 &&
     cardName.trim().length > 0 &&
     cardValidade.length === 5 &&
     cardCvv.length >= 3
 
-  async function handleConfirmPedido() {
-    if (!metodoPagamento) return
-
+  // Polling do status do PIX
+  useEffect(() => {
+    if (step !== 'pix' || !pedido) return
     const session = readMesaSession()
-    if (!session) {
-      setSubmitError('Sessão da mesa expirada. Escaneie o QR code novamente.')
-      return
-    }
+    if (!session) return
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const pagamento = await buscarStatusPagamento(session.tenantSlug, pedido.id)
+        if (pagamento?.status === 'APROVADO') {
+          clearInterval(pollingRef.current!)
+          clear()
+          navigate('/order')
+        }
+      } catch {
+        // ignora erros de rede no polling
+      }
+    }, 3000)
+
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current) }
+  }, [step, pedido, clear, navigate])
+
+  // QR code gerado a partir do base64 do MP
+  const pixQrSrc = useMemo(() => {
+    if (!pixQrBase64) return null
+    if (pixQrBase64.startsWith('data:')) return pixQrBase64
+    return `data:image/png;base64,${pixQrBase64}`
+  }, [pixQrBase64])
+
+  function buildItens() {
+    return items.map(it => ({
+      produtoId: it.item.id,
+      quantidade: it.qty,
+      observacao: it.obs || undefined,
+      opcoesSelecionadas: it.selecoes?.map(s => ({
+        grupoOpcaoNome: s.grupoNome,
+        opcaoNome: s.opcaoNome,
+        precoAdicional: s.precoAdicional,
+      })),
+    }))
+  }
+
+  // PIX: cria pedido agora e exibe QR code para pagamento
+  async function handleConfirmPedidoPix() {
+    const session = readMesaSession()
+    if (!session) { setSubmitError('Sessão da mesa expirada. Escaneie o QR code novamente.'); return }
 
     setSubmitError(null)
     setSubmitting(true)
@@ -160,20 +178,11 @@ export default function Checkout() {
       const created = await createPedido(session.tenantSlug, {
         mesaQrCodeToken: session.qrCodeToken,
         nomeCliente: nome.trim(),
-        pagamento: { metodo: metodoPagamento },
-        itens: items.map(it => ({
-          produtoId: it.item.id,
-          quantidade: it.qty,
-          observacao: it.obs || undefined,
-          opcoesSelecionadas: it.selecoes?.map(s => ({
-            grupoOpcaoNome: s.grupoNome,
-            opcaoNome: s.opcaoNome,
-            precoAdicional: s.precoAdicional,
-          })),
-        })),
+        pagamento: { metodo: 'PIX' },
+        itens: buildItens(),
       })
       setPedido(created)
-      setStep(metodoPagamento === 'PIX' ? 'pix' : 'cartao')
+      setStep('pix')
     } catch {
       setSubmitError('Não foi possível enviar o pedido. Tente novamente.')
     } finally {
@@ -181,36 +190,69 @@ export default function Checkout() {
     }
   }
 
-  async function handleConfirmPagamento() {
-    if (!pedido) return
-
-    const session = readMesaSession()
-    if (!session) {
-      setConfirmError('Sessão da mesa expirada. Escaneie o QR code novamente.')
-      return
-    }
-
-    setConfirmError(null)
-    setConfirming(true)
-    try {
-      const { pedido: updated } = await confirmarPagamento(session.tenantSlug, pedido.id, pedido.confirmacaoToken)
-      setPedido({ ...updated, confirmacaoToken: pedido.confirmacaoToken })
-      clear()
-      navigate('/order')
-    } catch {
-      setConfirmError('Não foi possível confirmar o pagamento. Tente novamente.')
-    } finally {
-      setConfirming(false)
-    }
+  // Cartão: avança para o formulário sem criar pedido ainda
+  function handleConfirmPedidoCartao() {
+    setStep('cartao')
   }
 
   async function handleCopyPixCode() {
+    if (!pixCode) return
     try {
       await navigator.clipboard.writeText(pixCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // clipboard indisponível, ignora silenciosamente
+      // clipboard indisponível
+    }
+  }
+
+  // Cartão: tokeniza e cria o pedido em uma única chamada
+  async function handlePagarCartao() {
+    if (!mpLoaded) return
+    const session = readMesaSession()
+    if (!session) { setCardError('Sessão da mesa expirada.'); return }
+
+    setCardError(null)
+    setProcessingCard(true)
+
+    try {
+      const mp = new window.MercadoPago(MP_PUBLIC_KEY)
+      const [expirationMonth, expirationYear] = cardValidade.split('/')
+
+      const { token } = await mp.createCardToken({
+        cardNumber: cardNumber.replace(/\s/g, ''),
+        cardholderName: cardName.trim(),
+        cardExpirationMonth: expirationMonth,
+        cardExpirationYear: `20${expirationYear}`,
+        securityCode: cardCvv,
+      })
+
+      const bin = cardNumber.replace(/\s/g, '').slice(0, 6)
+      const paymentMethods = await mp.getPaymentMethods({ bin })
+      const paymentMethodId = paymentMethods?.results?.[0]?.id ?? 'visa'
+
+      const criado = await createPedido(session.tenantSlug, {
+        mesaQrCodeToken: session.qrCodeToken,
+        nomeCliente: nome.trim(),
+        pagamento: {
+          metodo: metodoPagamento!,
+          cardToken: token.id,
+          paymentMethodId,
+          installments: 1,
+        },
+        itens: buildItens(),
+      })
+
+      if (criado.pagamento?.status === 'APROVADO') {
+        clear()
+        navigate('/order')
+      } else {
+        setCardError('Pagamento não aprovado. Verifique os dados do cartão e tente novamente.')
+      }
+    } catch {
+      setCardError('Erro ao processar o cartão. Verifique os dados e tente novamente.')
+    } finally {
+      setProcessingCard(false)
     }
   }
 
@@ -227,25 +269,15 @@ export default function Checkout() {
     return (
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={0} onClose={() => navigate(-1)} />
-
         <div className="px-4 pb-24">
           <ItemSummaryCard itemCount={itemCount} total={total} />
-
           <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como podemos te chamar?</h2>
           <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Vamos usar esse nome no painel do balcão para chamar você quando o pedido estiver pronto.
           </p>
-
           <div className="mt-6">
-            <TextField
-              id="checkout-nome"
-              label="Seu nome"
-              value={nome}
-              onChange={event => setNome(event.target.value)}
-              placeholder="Ex: Guilherme"
-            />
+            <TextField id="checkout-nome" label="Seu nome" value={nome} onChange={event => setNome(event.target.value)} placeholder="Ex: Guilherme" />
           </div>
-
           <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim()} onClick={() => setStep('pagamento')}>
             Continuar
           </Button>
@@ -260,19 +292,15 @@ export default function Checkout() {
       { id: 'CARTAO_CREDITO' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard },
       { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet },
     ]
-
     return (
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={1} onClose={() => setStep('identificacao')} />
-
         <div className="px-4 pb-24">
           <ItemSummaryCard itemCount={itemCount} total={total} />
-
           <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como você vai pagar?</h2>
           <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Escolha a forma de pagamento para enviar o pedido para a cozinha.
           </p>
-
           <div className="mt-6 space-y-3">
             {methods.map(method => {
               const Icon = method.icon
@@ -284,10 +312,7 @@ export default function Checkout() {
                   className="w-full flex items-center gap-4 px-4 py-4 text-left transition"
                   style={{ borderRadius: 'var(--r-card)', background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)' }}
                 >
-                  <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center"
-                    style={{ borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', color: 'var(--accent-quiet)' }}
-                  >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', color: 'var(--accent-quiet)' }}>
                     <Icon className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -317,9 +342,7 @@ export default function Checkout() {
                   <div className="text-left w-8/12">
                     <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{it.item.nome}</div>
                     {it.selecoes && it.selecoes.length > 0 && (
-                      <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
-                        {it.selecoes.map(s => s.opcaoNome).join(', ')}
-                      </div>
+                      <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{it.selecoes.map(s => s.opcaoNome).join(', ')}</div>
                     )}
                     <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>{it.qty} x {fmt(cartItemUnitPrice(it))}</div>
                   </div>
@@ -328,18 +351,22 @@ export default function Checkout() {
               </li>
             ))}
           </ul>
-
           {submitError && (
             <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{submitError}</p>
           )}
-
           <div className="mt-6">
             <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="text-left">
                 <div style={{ font: 'var(--text-label)', color: 'var(--text-muted)' }}>Total</div>
                 <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(total)}</div>
               </div>
-              <IconButton icon={Check} label="Confirmar pedido" variant="accent" onClick={handleConfirmPedido} style={{ opacity: submitting ? 0.5 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }} />
+              <IconButton
+                icon={Check}
+                label="Confirmar pedido"
+                variant="accent"
+                onClick={metodoPagamento === 'PIX' ? handleConfirmPedidoPix : handleConfirmPedidoCartao}
+                style={{ opacity: submitting ? 0.5 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
+              />
             </GlassCard>
           </div>
         </div>
@@ -351,7 +378,6 @@ export default function Checkout() {
     return (
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
-
         <div className="px-4 pb-24">
           <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Pagar com Pix</h2>
           {pedido && (
@@ -360,97 +386,68 @@ export default function Checkout() {
           <ItemSummaryCard itemCount={itemCount} total={total} />
 
           <GlassCard style={{ padding: 'var(--sp-6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <PixQrCode />
+            {pixQrSrc ? (
+              <img src={pixQrSrc} alt="QR Code Pix" width={176} height={176} style={{ borderRadius: 'var(--r-sm)' }} />
+            ) : (
+              <div style={{ width: 176, height: 176, background: 'var(--surface-control)', borderRadius: 'var(--r-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <QrCode size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
+              </div>
+            )}
             <div className="mt-4" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{fmt(total)}</div>
             <p className="mt-2 text-center" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
               Abra o app do seu banco e escaneie o código, ou copie e cole na área Pix Copia e Cola.
             </p>
           </GlassCard>
 
-          <div className="mt-4">
-            <GlassCard style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
-              <span className="flex-1 truncate" style={{ font: 'var(--font-mono)', fontSize: 12, color: 'var(--text-secondary)' }}>{pixCode}</span>
-              <button
-                type="button"
-                onClick={handleCopyPixCode}
-                className="shrink-0 px-3 py-1.5"
-                style={{ borderRadius: 'var(--r-sm)', background: 'var(--surface-control)', color: 'var(--text-primary)', font: 'var(--text-caption)' }}
-              >
-                {copied ? 'Copiado!' : 'Copiar'}
-              </button>
-            </GlassCard>
-          </div>
+          {pixCode && (
+            <div className="mt-4">
+              <GlassCard style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+                <span className="flex-1 truncate" style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>{pixCode}</span>
+                <button
+                  type="button"
+                  onClick={handleCopyPixCode}
+                  className="shrink-0 px-3 py-1.5"
+                  style={{ borderRadius: 'var(--r-sm)', background: 'var(--surface-control)', color: 'var(--text-primary)', font: 'var(--text-caption)' }}
+                >
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </GlassCard>
+            </div>
+          )}
 
           <div className="mt-4 flex items-center justify-center gap-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: 'var(--gold-500)' }} />
             Aguardando confirmação do pagamento...
           </div>
-
-          {confirmError && (
-            <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{confirmError}</p>
-          )}
-
-          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={confirming} onClick={handleConfirmPagamento}>
-            {confirming ? 'Confirmando...' : 'Simular pagamento confirmado'}
-          </Button>
         </div>
       </div>
     )
   }
 
+  // Cartão
   const cardStepTitle = metodoPagamento === 'CARTAO_DEBITO' ? 'Cartão de débito' : 'Cartão de crédito'
-
   return (
     <div className="ember-theme min-h-screen">
       <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
-
       <div className="px-4 pb-24">
         <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{cardStepTitle}</h2>
         {pedido && (
           <p className="mb-2 text-right" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Pedido nº {pedido.numeroSequencial}</p>
         )}
         <ItemSummaryCard itemCount={itemCount} total={total} />
-
         <div className="space-y-5">
-          <TextField
-            id="card-number" label="Número do cartão"
-            value={cardNumber}
-            onChange={event => setCardNumber(formatCardNumber(event.target.value))}
-            placeholder="0000 0000 0000 0000"
-            inputMode="numeric"
-          />
-
-          <TextField
-            id="card-name" label="Nome impresso no cartão"
-            value={cardName}
-            onChange={event => setCardName(event.target.value)}
-            placeholder="Como está no cartão"
-          />
-
+          <TextField id="card-number" label="Número do cartão" value={cardNumber} onChange={event => setCardNumber(formatCardNumber(event.target.value))} placeholder="0000 0000 0000 0000" inputMode="numeric" />
+          <TextField id="card-name" label="Nome impresso no cartão" value={cardName} onChange={event => setCardName(event.target.value)} placeholder="Como está no cartão" />
           <div className="grid grid-cols-2 gap-3">
-            <TextField
-              id="card-validade" label="Validade"
-              value={cardValidade}
-              onChange={event => setCardValidade(formatValidade(event.target.value))}
-              placeholder="MM/AA"
-              inputMode="numeric"
-            />
-            <TextField
-              id="card-cvv" label="CVV"
-              value={cardCvv}
-              onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))}
-              placeholder="123"
-              inputMode="numeric"
-            />
+            <TextField id="card-validade" label="Validade" value={cardValidade} onChange={event => setCardValidade(formatValidade(event.target.value))} placeholder="MM/AA" inputMode="numeric" />
+            <TextField id="card-cvv" label="CVV" value={cardCvv} onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="123" inputMode="numeric" />
           </div>
         </div>
-
-        {confirmError && (
-          <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{confirmError}</p>
+        {cardError && (
+          <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{cardError}</p>
         )}
-
-        <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!cardValid || confirming} onClick={handleConfirmPagamento}>
-          {confirming ? 'Confirmando...' : `Pagar ${fmt(total)}`}
+        <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!cardValid || processingCard || !mpLoaded} onClick={handlePagarCartao}>
+          {processingCard ? 'Processando...' : `Pagar ${fmt(total)}`}
         </Button>
       </div>
     </div>
