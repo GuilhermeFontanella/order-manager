@@ -31,7 +31,12 @@ export type CreatePedidoPayload = {
   mesaQrCodeToken: string;
   nomeCliente: string;
   emailCliente?: string;
-  pagamento: { metodo: MetodoPagamento };
+  pagamento: {
+    metodo: MetodoPagamento;
+    cardToken?: string;
+    paymentMethodId?: string;
+    installments?: number;
+  };
   itens: CreatePedidoItemInput[];
 };
 
@@ -64,6 +69,8 @@ export type Pedido = {
     metodo: MetodoPagamento;
     status: "PENDENTE" | "APROVADO" | "RECUSADO" | "ESTORNADO";
     gatewayTransactionId: string | null;
+    pixQrCode: string | null;
+    pixQrCodeBase64: string | null;
     confirmadoEm: string | null;
   } | null;
   mesa: Mesa;
@@ -173,5 +180,15 @@ export async function confirmarPagamento(
   }>(`/r/${tenantSlug}/pedidos/${pedidoId}/confirmar-pagamento`, {
     confirmacaoToken,
   });
+  return response.data;
+}
+
+export async function buscarStatusPagamento(
+  tenantSlug: string,
+  pedidoId: string,
+): Promise<Pedido["pagamento"]> {
+  const response = await api.get<Pedido["pagamento"]>(
+    `/r/${tenantSlug}/pedidos/${pedidoId}/pagamento`,
+  );
   return response.data;
 }
