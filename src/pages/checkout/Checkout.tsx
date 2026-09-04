@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-const MP_PUBLIC_KEY = 'APP_USR-17c43e80-89bd-4ca5-b0ed-ab2d4f5a25c8'
+const MP_PUBLIC_KEY = 'TESTUSER8214124773422567220'
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
