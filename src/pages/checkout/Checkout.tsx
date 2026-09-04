@@ -107,6 +107,7 @@ export default function Checkout() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const [copied, setCopied] = useState(false)
+  const [numeroPedidoConfirmado, setNumeroPedidoConfirmado] = useState<number | null>(null)
   const pixCode = pedido?.pagamento?.pixQrCode ?? ''
   const pixQrBase64 = pedido?.pagamento?.pixQrCodeBase64 ?? ''
 
@@ -136,8 +137,7 @@ export default function Checkout() {
         const pagamento = await buscarStatusPagamento(session.tenantSlug, pedido.id)
         if (pagamento?.status === 'APROVADO') {
           clearInterval(pollingRef.current!)
-          clear()
-          navigate('/order')
+          setNumeroPedidoConfirmado(pedido.numeroSequencial)
         }
       } catch {
         // ignora erros de rede no polling
@@ -244,8 +244,7 @@ export default function Checkout() {
       })
 
       if (criado.pagamento?.status === 'APROVADO') {
-        clear()
-        navigate('/order')
+        setNumeroPedidoConfirmado(criado.numeroSequencial)
       } else {
         setCardError('Pagamento não aprovado. Verifique os dados do cartão e tente novamente.')
       }
@@ -254,6 +253,43 @@ export default function Checkout() {
     } finally {
       setProcessingCard(false)
     }
+  }
+
+  if (numeroPedidoConfirmado !== null) {
+    return (
+      <div className="ember-theme min-h-screen flex items-center justify-center p-4">
+        <div
+          className="rounded-2xl px-6 py-8 flex flex-col items-center text-center"
+          style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)', maxWidth: 360, width: '100%' }}
+        >
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-full mb-4"
+            style={{ background: 'var(--accent-soft)' }}
+          >
+            <Check className="h-8 w-8" style={{ color: 'var(--accent)' }} />
+          </div>
+          <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)', marginBottom: 'var(--sp-2)' }}>
+            Pagamento confirmado!
+          </h2>
+          <p style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', marginBottom: 'var(--sp-2)' }}>
+            Seu pedido foi recebido e já está sendo preparado.
+          </p>
+          <p style={{ font: 'var(--text-title)', color: 'var(--text-primary)', marginBottom: 'var(--sp-6)' }}>
+            Pedido nº <span style={{ color: 'var(--accent)' }}>#{numeroPedidoConfirmado}</span>
+          </p>
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => {
+              clear()
+              navigate('/order')
+            }}
+          >
+            OK
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (items.length === 0) {
