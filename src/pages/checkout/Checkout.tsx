@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-const MP_PUBLIC_KEY = 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
+const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
