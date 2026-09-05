@@ -12,10 +12,12 @@ const STATUS_LABEL: Record<StatusPedido, string> = {
   CANCELADO: 'Cancelado',
 }
 
-const METODO_LABEL: Record<'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO', string> = {
+const METODO_LABEL: Record<'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'GOOGLE_PAY' | 'APPLE_PAY', string> = {
   PIX: 'Pix',
   CARTAO_CREDITO: 'Cartão de crédito',
   CARTAO_DEBITO: 'Cartão de débito',
+  GOOGLE_PAY: 'Google Pay',
+  APPLE_PAY: 'Apple Pay',
 }
 
 const STATUS_ALTERAVEIS: StatusPedido[] = ['AGUARDANDO_PAGAMENTO', 'PREPARANDO', 'PRONTO']
