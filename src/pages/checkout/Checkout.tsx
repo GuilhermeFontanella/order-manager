@@ -253,8 +253,11 @@ export default function Checkout() {
       } else {
         setCardError('Pagamento não aprovado. Verifique os dados do cartão e tente novamente.')
       }
-    } catch {
-      setCardError('Erro ao processar o cartão. Verifique os dados e tente novamente.')
+    } catch (err) {
+      console.error('Erro ao processar pagamento com cartão:', err)
+      const mpMessage = (err as { message?: string; cause?: Array<{ description?: string }> })?.cause?.[0]?.description
+        ?? (err as Error)?.message
+      setCardError(mpMessage ? `Erro ao processar o cartão: ${mpMessage}` : 'Erro ao processar o cartão. Verifique os dados e tente novamente.')
     } finally {
       setProcessingCard(false)
     }
