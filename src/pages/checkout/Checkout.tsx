@@ -31,7 +31,7 @@ function useMercadoPagoSDK() {
   return loaded
 }
 
-type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao'
+type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao' | 'carteira'
 
 function ProgressDots({ active }: { active: 0 | 1 }) {
   return (
@@ -195,6 +195,11 @@ export default function Checkout() {
     setStep('cartao')
   }
 
+  // Carteira digital: avança para a tela de confirmação via Payment Request API
+  function handleConfirmPedidoCarteira() {
+    setStep('carteira')
+  }
+
   async function handleCopyPixCode() {
     if (!pixCode) return
     try {
@@ -323,11 +328,19 @@ export default function Checkout() {
   }
 
   if (step === 'pagamento') {
+    const supportsPaymentRequest = typeof window !== 'undefined' && 'PaymentRequest' in window
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    const supportsApplePay = supportsPaymentRequest && isIOS && isSafari
+
     const methods = [
-      { id: 'PIX' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode },
-      { id: 'CARTAO_CREDITO' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard },
-      { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet },
+      { id: 'PIX' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode, wallet: false },
+      { id: 'CARTAO_CREDITO' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard, wallet: false },
+      { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet, wallet: false },
+      ...(supportsPaymentRequest ? [{ id: 'GOOGLE_PAY' as const, label: 'Google Pay', desc: 'Pague com sua carteira Google', icon: Wallet, wallet: true, logo: 'google' }] : []),
+      ...(supportsApplePay ? [{ id: 'APPLE_PAY' as const, label: 'Apple Pay', desc: 'Pague com seu dispositivo Apple', icon: Wallet, wallet: true, logo: 'apple' }] : []),
     ]
+
     return (
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={1} onClose={() => setStep('identificacao')} />
@@ -340,6 +353,7 @@ export default function Checkout() {
           <div className="mt-6 space-y-3">
             {methods.map(method => {
               const Icon = method.icon
+              const isWallet = (method as { wallet: boolean }).wallet
               return (
                 <button
                   key={method.id}
@@ -348,8 +362,31 @@ export default function Checkout() {
                   className="w-full flex items-center gap-4 px-4 py-4 text-left transition"
                   style={{ borderRadius: 'var(--r-card)', background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)' }}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center" style={{ borderRadius: 'var(--r-md)', background: 'var(--accent-soft)', color: 'var(--accent-quiet)' }}>
-                    <Icon className="h-5 w-5" />
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center"
+                    style={{
+                      borderRadius: 'var(--r-md)',
+                      background: isWallet
+                        ? ((method as { logo?: string }).logo === 'apple' ? '#000' : '#fff')
+                        : 'var(--accent-soft)',
+                      color: isWallet ? '#fff' : 'var(--accent-quiet)',
+                      border: isWallet && (method as { logo?: string }).logo === 'google' ? '1px solid var(--border-strong)' : 'none',
+                    }}
+                  >
+                    {(method as { logo?: string }).logo === 'google' ? (
+                      <svg viewBox="0 0 24 24" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                      </svg>
+                    ) : (method as { logo?: string }).logo === 'apple' ? (
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.32-2.15 3.93.03 3.12 2.6 4.16 2.63 4.17l-.03.07zM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      </svg>
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{method.label}</div>
@@ -400,7 +437,13 @@ export default function Checkout() {
                 icon={Check}
                 label="Confirmar pedido"
                 variant="accent"
-                onClick={metodoPagamento === 'PIX' ? handleConfirmPedidoPix : handleConfirmPedidoCartao}
+                onClick={
+                  metodoPagamento === 'PIX'
+                    ? handleConfirmPedidoPix
+                    : (metodoPagamento === 'GOOGLE_PAY' || metodoPagamento === 'APPLE_PAY')
+                      ? handleConfirmPedidoCarteira
+                      : handleConfirmPedidoCartao
+                }
                 style={{ opacity: submitting ? 0.5 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
               />
             </GlassCard>
@@ -455,6 +498,119 @@ export default function Checkout() {
             <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: 'var(--gold-500)' }} />
             Aguardando confirmação do pagamento...
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'carteira') {
+    const isApplePay = metodoPagamento === 'APPLE_PAY'
+    const walletLabel = isApplePay ? 'Apple Pay' : 'Google Pay'
+    const [walletProcessing, setWalletProcessing] = useState(false)
+    const [walletError, setWalletError] = useState<string | null>(null)
+
+    async function handlePagarCarteira() {
+      const session = readMesaSession()
+      if (!session) { setWalletError('Sessão da mesa expirada.'); return }
+
+      setWalletError(null)
+      setWalletProcessing(true)
+
+      try {
+        const supportedMethods: PaymentMethodData[] = isApplePay
+          ? [{ supportedMethods: 'https://apple.com/apple-pay', data: { version: 3, merchantIdentifier: 'merchant.com.seusite', merchantCapabilities: ['supports3DS'], supportedNetworks: ['visa', 'masterCard', 'amex', 'elo'], countryCode: 'BR' } }]
+          : [{ supportedMethods: 'https://google.com/pay', data: { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [{ type: 'CARD', parameters: { allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'], allowedCardNetworks: ['MASTERCARD', 'VISA', 'ELO'] }, tokenizationSpecification: { type: 'PAYMENT_GATEWAY', parameters: { gateway: 'mercadopago', gatewayMerchantId: MP_PUBLIC_KEY } } }], merchantInfo: { merchantName: 'Restaurante' } } }]
+
+        const details: PaymentDetailsInit = {
+          total: { label: 'Total do pedido', amount: { currency: 'BRL', value: (total / 100).toFixed(2) } },
+        }
+
+        const request = new PaymentRequest(supportedMethods, details)
+        const canMakePayment = await request.canMakePayment()
+        if (!canMakePayment) {
+          setWalletError(`${walletLabel} não está disponível neste dispositivo. Configure uma carteira no app ${isApplePay ? 'Wallet' : 'Google Pay'} e tente novamente.`)
+          setWalletProcessing(false)
+          return
+        }
+
+        const paymentResponse = await request.show()
+        const token = (paymentResponse.details as { token?: string })?.token
+          ?? JSON.stringify(paymentResponse.details)
+
+        const criado = await createPedido(session.tenantSlug, {
+          mesaQrCodeToken: session.qrCodeToken,
+          nomeCliente: nome.trim(),
+          pagamento: {
+            metodo: metodoPagamento!,
+            cardToken: token,
+            paymentMethodId: isApplePay ? 'apple_pay' : 'google_pay',
+            installments: 1,
+          },
+          itens: buildItens(),
+        })
+
+        await paymentResponse.complete('success')
+
+        if (criado.pagamento?.status === 'APROVADO') {
+          setNumeroPedidoConfirmado(criado.numeroSequencial)
+        } else {
+          await paymentResponse.complete('fail')
+          setWalletError('Pagamento não aprovado. Tente novamente.')
+        }
+      } catch (err) {
+        if ((err as Error)?.name === 'AbortError') {
+          setWalletError(null)
+        } else {
+          setWalletError(`Erro ao processar ${walletLabel}. Tente outro método de pagamento.`)
+        }
+      } finally {
+        setWalletProcessing(false)
+      }
+    }
+
+    return (
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
+        <div className="px-4 pb-24">
+          <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{walletLabel}</h2>
+          <ItemSummaryCard itemCount={itemCount} total={total} />
+          <GlassCard style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--sp-8)', gap: 'var(--sp-4)' }}>
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-2xl"
+              style={{ background: isApplePay ? '#000' : '#fff', border: isApplePay ? 'none' : '1px solid var(--border-strong)' }}
+            >
+              {isApplePay ? (
+                <svg viewBox="0 0 24 24" width="32" height="32" fill="white" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.15-2.18 1.32-2.15 3.93.03 3.12 2.6 4.16 2.63 4.17l-.03.07zM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+              )}
+            </div>
+            <p style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              Toque no botão abaixo para autenticar o pagamento com {walletLabel}. Seu dispositivo solicitará confirmação biométrica ou por PIN.
+            </p>
+            <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(total)}</div>
+          </GlassCard>
+          {walletError && (
+            <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{walletError}</p>
+          )}
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={walletProcessing} onClick={handlePagarCarteira}>
+            {walletProcessing ? 'Aguardando autenticação...' : `Pagar com ${walletLabel}`}
+          </Button>
+          <button
+            type="button"
+            className="w-full mt-3 py-2 text-center"
+            style={{ font: 'var(--text-body)', color: 'var(--text-muted)' }}
+            onClick={() => setStep('pagamento')}
+          >
+            Usar outro método de pagamento
+          </button>
         </div>
       </div>
     )
