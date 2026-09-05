@@ -17,7 +17,7 @@ declare global {
   }
 }
 
-const MP_PUBLIC_KEY = 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
+const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
@@ -253,8 +253,11 @@ export default function Checkout() {
       } else {
         setCardError('Pagamento não aprovado. Verifique os dados do cartão e tente novamente.')
       }
-    } catch {
-      setCardError('Erro ao processar o cartão. Verifique os dados e tente novamente.')
+    } catch (err) {
+      console.error('Erro ao processar pagamento com cartão:', err)
+      const mpMessage = (err as { message?: string; cause?: Array<{ description?: string }> })?.cause?.[0]?.description
+        ?? (err as Error)?.message
+      setCardError(mpMessage ? `Erro ao processar o cartão: ${mpMessage}` : 'Erro ao processar o cartão. Verifique os dados e tente novamente.')
     } finally {
       setProcessingCard(false)
     }
