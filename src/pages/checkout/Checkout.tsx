@@ -517,8 +517,13 @@ export default function Checkout() {
       setWalletProcessing(true)
 
       try {
+        // Apple Pay: substitua APPLE_MERCHANT_ID pelo seu Merchant ID registrado em
+        // https://developer.apple.com/account/resources/identifiers/list/merchant
+        // e adicione o arquivo de verificação de domínio fornecido pela Apple em /.well-known/apple-developer-merchantid-domain-association
+        const APPLE_MERCHANT_ID = 'merchant.com.seudominio'
+
         const supportedMethods: PaymentMethodData[] = isApplePay
-          ? [{ supportedMethods: 'https://apple.com/apple-pay', data: { version: 3, merchantIdentifier: 'merchant.com.seusite', merchantCapabilities: ['supports3DS'], supportedNetworks: ['visa', 'masterCard', 'amex', 'elo'], countryCode: 'BR' } }]
+          ? [{ supportedMethods: 'https://apple.com/apple-pay', data: { version: 3, merchantIdentifier: APPLE_MERCHANT_ID, merchantCapabilities: ['supports3DS'], supportedNetworks: ['visa', 'masterCard', 'amex', 'elo'], countryCode: 'BR' } }]
           : [{ supportedMethods: 'https://google.com/pay', data: { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [{ type: 'CARD', parameters: { allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'], allowedCardNetworks: ['MASTERCARD', 'VISA', 'ELO'] }, tokenizationSpecification: { type: 'PAYMENT_GATEWAY', parameters: { gateway: 'mercadopago', gatewayMerchantId: MP_PUBLIC_KEY } } }], merchantInfo: { merchantName: 'Restaurante' } } }]
 
         const details: PaymentDetailsInit = {
