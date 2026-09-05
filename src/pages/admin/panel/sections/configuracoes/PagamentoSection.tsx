@@ -16,6 +16,8 @@ export default function PagamentoSection() {
     PIX: true,
     CARTAO_CREDITO: true,
     CARTAO_DEBITO: true,
+    GOOGLE_PAY: true,
+    APPLE_PAY: true,
   })
 
   function toggle(metodo: MetodoPagamento) {
