@@ -92,6 +92,14 @@ function formatValidade(value: string) {
   return digits.length <= 2 ? digits : `${digits.slice(0, 2)}/${digits.slice(2)}`
 }
 
+function formatCpf(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  return digits
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2')
+}
+
 export default function Checkout() {
   const { items, clear } = useCart()
   const navigate = useNavigate()
@@ -117,6 +125,7 @@ export default function Checkout() {
   const [cardName, setCardName] = useState('')
   const [cardValidade, setCardValidade] = useState('')
   const [cardCvv, setCardCvv] = useState('')
+  const [cardCpf, setCardCpf] = useState('')
   const [cardError, setCardError] = useState<string | null>(null)
   const [processingCard, setProcessingCard] = useState(false)
 
@@ -124,7 +133,8 @@ export default function Checkout() {
     cardNumber.replace(/\D/g, '').length === 16 &&
     cardName.trim().length > 0 &&
     cardValidade.length === 5 &&
-    cardCvv.length >= 3
+    cardCvv.length >= 3 &&
+    cardCpf.replace(/\D/g, '').length === 11
 
   // Polling do status do PIX
   useEffect(() => {
@@ -230,6 +240,8 @@ export default function Checkout() {
         cardExpirationMonth: expirationMonth,
         cardExpirationYear: `20${expirationYear}`,
         securityCode: cardCvv,
+        identificationType: 'CPF',
+        identificationNumber: cardCpf.replace(/\D/g, ''),
       })
 
       const bin = cardNumber.replace(/\s/g, '').slice(0, 6)
@@ -638,6 +650,7 @@ export default function Checkout() {
         <div className="space-y-5">
           <TextField id="card-number" label="Número do cartão" value={cardNumber} onChange={event => setCardNumber(formatCardNumber(event.target.value))} placeholder="0000 0000 0000 0000" inputMode="numeric" />
           <TextField id="card-name" label="Nome impresso no cartão" value={cardName} onChange={event => setCardName(event.target.value)} placeholder="Como está no cartão" />
+          <TextField id="card-cpf" label="CPF do titular" value={cardCpf} onChange={event => setCardCpf(formatCpf(event.target.value))} placeholder="000.000.000-00" inputMode="numeric" />
           <div className="grid grid-cols-2 gap-3">
             <TextField id="card-validade" label="Validade" value={cardValidade} onChange={event => setCardValidade(formatValidade(event.target.value))} placeholder="MM/AA" inputMode="numeric" />
             <TextField id="card-cvv" label="CVV" value={cardCvv} onChange={event => setCardCvv(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="123" inputMode="numeric" />
