@@ -234,7 +234,7 @@ export default function Checkout() {
       const mp = new window.MercadoPago(MP_PUBLIC_KEY)
       const [expirationMonth, expirationYear] = cardValidade.split('/')
 
-      const { token } = await mp.createCardToken({
+      const token = await mp.createCardToken({
         cardNumber: cardNumber.replace(/\s/g, ''),
         cardholderName: cardName.trim(),
         cardExpirationMonth: expirationMonth,
