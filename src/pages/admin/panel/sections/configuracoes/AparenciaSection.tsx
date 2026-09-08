@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react";
+import { ImagePlus, RotateCcw, X } from "lucide-react";
 import SettingsSaveBar from "../../components/SettingsSaveBar";
 import { useSavedFlag } from "../../hooks/useSavedFlag";
 import {
@@ -12,6 +12,16 @@ import {
   uploadImagemRestaurante,
 } from "../../../../../services/configuracaoRestaurante";
 
+// Cores padrão do tema ember (mesmos valores usados como fallback no cardápio
+// do cliente quando o tenant não tem apparence.corBotaoPrimario configurada —
+// ver "--tenant-primary" em OrderMenu.tsx).
+const CORES_PADRAO_EMBER = {
+  corBotaoPrimario: "#F5811F",
+  corBotaoSecundario: "#C79A56",
+  corTextoPrimario: "#201E1A",
+  corTextoSecundario: "#79735F",
+};
+
 export default function AparenciaSection() {
   const { saved, trigger } = useSavedFlag();
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -19,10 +29,18 @@ export default function AparenciaSection() {
 
   const [arteCardapioUrl, setArteCardapioUrl] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [corBotaoPrimario, setCorBotaoPrimario] = useState("#2F5D46");
-  const [corBotaoSecundario, setCorBotaoSecundario] = useState("#C79A56");
-  const [corTextoPrimario, setCorTextoPrimario] = useState("#201E1A");
-  const [corTextoSecundario, setCorTextoSecundario] = useState("#79735F");
+  const [corBotaoPrimario, setCorBotaoPrimario] = useState(
+    CORES_PADRAO_EMBER.corBotaoPrimario,
+  );
+  const [corBotaoSecundario, setCorBotaoSecundario] = useState(
+    CORES_PADRAO_EMBER.corBotaoSecundario,
+  );
+  const [corTextoPrimario, setCorTextoPrimario] = useState(
+    CORES_PADRAO_EMBER.corTextoPrimario,
+  );
+  const [corTextoSecundario, setCorTextoSecundario] = useState(
+    CORES_PADRAO_EMBER.corTextoSecundario,
+  );
   const [mostrarDescricao, setMostrarDescricao] = useState(true);
   const [mostrarFotos, setMostrarFotos] = useState(true);
   const [mostrarIngredientes, setMostrarIngredientes] = useState(false);
@@ -72,6 +90,13 @@ export default function AparenciaSection() {
     } catch (err) {
       setError(getApiErrorMessage(err, "Não foi possível salvar a aparência."));
     }
+  }
+
+  function resetCoresParaPadrao() {
+    setCorBotaoPrimario(CORES_PADRAO_EMBER.corBotaoPrimario);
+    setCorBotaoSecundario(CORES_PADRAO_EMBER.corBotaoSecundario);
+    setCorTextoPrimario(CORES_PADRAO_EMBER.corTextoPrimario);
+    setCorTextoSecundario(CORES_PADRAO_EMBER.corTextoSecundario);
   }
 
   if (loading) return <p className="ap-card-sub">Carregando aparência...</p>;
@@ -196,7 +221,18 @@ export default function AparenciaSection() {
           </div>
 
           <div className="ap-card flex-1 text-left">
-            <div className="ap-card-title">Cores e tipografia</div>
+            <div className="flex justify-between align-center">
+              <div className="ap-card-title">Cores e tipografia</div>
+              <button
+                type="button"
+                className="ap-btn ap-btn-ghost"
+                onClick={resetCoresParaPadrao}
+                title="Restaurar as cores padrão do tema ember"
+              >
+                <RotateCcw size={14} />
+                Restaurar padrão
+              </button>
+            </div>
             <div className="ap-card-sub">
               Personaliza a aparência do cardápio digital de acordo com a
               identidade do estabelecimento.
