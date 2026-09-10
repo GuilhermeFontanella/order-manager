@@ -86,7 +86,7 @@ export default function Sidebar({
               </NavLink>
 
               {item.children && showLabels && isParentActive && (
-                <div className="ap-nav-submenu">
+                <div className="ap-nav-submenu text-left">
                   {item.children.map(child => (
                     <NavLink
                       key={child.to}
@@ -103,13 +103,6 @@ export default function Sidebar({
           )
         })}
       </nav>
-
-      {!isMobile && (
-        <button type="button" className="ap-sidebar-collapse" onClick={onToggleCollapse}>
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-          {showLabels && <span>Recolher</span>}
-        </button>
-      )}
     </aside>
   )
 }

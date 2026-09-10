@@ -234,18 +234,17 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--ap-ink) 8%, transparent);
+  background: var(--ap-gold);
   border: none;
-  color: var(--ap-ink-soft);
-  border-radius: 10px;
+  border-radius: 50%;
   padding: 10px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
   font-family: inherit;
-}
-.ap-sidebar-collapse:hover {
-  background: color-mix(in srgb, var(--ap-ink) 13%, transparent);
+  position: relative;
+  left: -52px;
+  color: var(--ap-ink-soft);
 }
 @media (max-width: 859px) {
   .ap-sidebar-collapse {
@@ -269,7 +268,7 @@
   backdrop-filter: var(--blur-bar);
   -webkit-backdrop-filter: var(--blur-bar);
   border-bottom: 1px solid var(--ap-border-soft);
-  padding: 16px 24px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -349,6 +348,7 @@
 
 /* ---------- Period filter ---------- */
 .ap-period-filter {
+  position: relative;
   display: inline-flex;
   gap: 4px;
   background: var(--ap-surface);
@@ -357,7 +357,16 @@
   box-shadow: var(--ap-shadow-sm);
   margin-bottom: 20px;
 }
+.ap-period-thumb {
+  position: absolute;
+  background: var(--ap-green);
+  border-radius: 100px;
+  z-index: 0;
+  pointer-events: none;
+}
 .ap-period-chip {
+  position: relative;
+  z-index: 1;
   border: none;
   cursor: pointer;
   padding: 8px 14px;
@@ -367,6 +376,7 @@
   font-family: inherit;
   background: none;
   color: var(--ap-ink-soft);
+  transition: color 0.25s ease;
 }
 .ap-period-chip.is-active {
   background: var(--ap-green);

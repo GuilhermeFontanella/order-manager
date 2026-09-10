@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { LogOut, Menu } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LogOut, Menu } from 'lucide-react'
 import { ThemeProvider } from '@mui/material/styles'
 import { useAuth } from '../../../context/AuthContext'
 import { EmberThemeProvider, useEmberTheme } from '../../../context/EmberThemeContext'
@@ -84,6 +84,7 @@ function AdminPanelShell() {
           onNavigate={() => setMobileOpen(false)}
           onToggleCollapse={() => setCollapsed(prev => !prev)}
         />
+        
 
         <div className="ap-main">
           <header className="ap-header">
@@ -98,6 +99,11 @@ function AdminPanelShell() {
                   <Menu size={17} />
                 </button>
               )}
+              {!isMobile && (
+        <button type="button" className="ap-sidebar-collapse" onClick={() => setCollapsed(prev => !prev)}>
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+        </button>
+      )}
               <h1 className="ap-header-title">{sectionTitle}</h1>
             </div>
 
