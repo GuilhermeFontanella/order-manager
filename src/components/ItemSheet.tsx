@@ -104,12 +104,12 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
         <div className="flex flex-col gap-3 rounded-3xl p-4" style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)' }}>
           <div className="flex gap-4 items-start">
             <div
-              className="flex w-2/3 h-16 items-center justify-center text-3xl"
+              className="flex w-1/3 aspect-square shrink-0 items-center justify-center text-3xl overflow-hidden"
               style={{ borderRadius: 'var(--r-image)', background: 'var(--ink-2)', boxShadow: 'var(--ring-inner)' }}
             >
               <img src={item.fotos?.[0]} alt={item.nome} className="h-full w-full object-cover rounded-2xl" />
             </div>
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left flex-1 min-w-0">
               <div className="flex text-left justify-between pb-2">
                 <h3 style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>{item.nome}</h3>
                 <div className="text-right" style={{ font: 'var(--text-title)', fontSize: 'var(--fs-price)', color: 'var(--text-price)' }}>{fmt(precoUnitario)}</div>
