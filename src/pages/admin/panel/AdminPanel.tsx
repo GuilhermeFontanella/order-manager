@@ -82,7 +82,6 @@ function AdminPanelShell() {
           collapsed={collapsed}
           mobileOpen={mobileOpen}
           onNavigate={() => setMobileOpen(false)}
-          onToggleCollapse={() => setCollapsed(prev => !prev)}
         />
         
 
