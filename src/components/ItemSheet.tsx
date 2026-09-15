@@ -83,7 +83,11 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
 
   return (
     <div className="ember-theme fixed inset-0 z-50">
-      <div className="absolute inset-0" style={{ background: 'var(--glass-lo)' }} onClick={onClose} />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'var(--glass-lo)', backdropFilter: 'var(--blur-scrim)', WebkitBackdropFilter: 'var(--blur-scrim)' }}
+        onClick={onClose}
+      />
 
       <motion.div
         initial={{ y: '100%' }}

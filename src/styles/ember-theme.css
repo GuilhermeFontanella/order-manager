@@ -120,6 +120,7 @@
   --ring-inner-strong: inset 0 0 0 1px var(--border-strong);
   --blur-glass: blur(18px) saturate(120%);
   --blur-bar: blur(24px) saturate(130%);
+  --blur-scrim: blur(12px);
 
   /* --- motion (tokens/motion.css) --- */
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
