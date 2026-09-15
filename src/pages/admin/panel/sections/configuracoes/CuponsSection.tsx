@@ -167,39 +167,83 @@ export default function CuponsSection() {
         {filteredCupons.length === 0 ? (
           <p className="ap-card-sub">Nenhum cupom encontrado.</p>
         ) : (
-          <div className="ap-user-list">
-            {filteredCupons.map((cupom) => (
-              <div className="ap-user-row" key={cupom.id}>
-                <div className="ap-user-avatar">
-                  <Tag size={16} />
-                </div>
-                <div className="ap-user-main">
-                  <strong>{cupom.codigo}</strong>
-                  <span>Válido até {formatData(cupom.validoAte)}</span>
-                </div>
-                <span className="ap-role-badge">{formatDesconto(cupom)}</span>
-                <span className={`ap-status ${cupom.ativo ? "is-active" : ""}`} style={{ cursor: "default" }}>
-                  {cupom.ativo ? "Ativo" : "Inativo"}
-                </span>
-                <button
-                  type="button"
-                  className="ap-btn ap-btn-ghost ap-btn-icon"
-                  onClick={() => openEditModal(cupom)}
-                  aria-label={`Editar ${cupom.codigo}`}
-                >
-                  <Pencil size={15} />
-                </button>
-                <button
-                  type="button"
-                  className="ap-btn ap-btn-danger"
-                  onClick={() => setPendingDelete(cupom)}
-                  aria-label={`Excluir ${cupom.codigo}`}
-                >
-                  <Trash size={15} />
-                </button>
+          <>
+            <div className="ap-table-wrap">
+              <div className="ap-user-list">
+                {filteredCupons.map((cupom) => (
+                  <div className="ap-user-row" key={cupom.id}>
+                    <div className="ap-user-avatar">
+                      <Tag size={16} />
+                    </div>
+                    <div className="ap-user-main">
+                      <strong>{cupom.codigo}</strong>
+                      <span>Válido até {formatData(cupom.validoAte)}</span>
+                    </div>
+                    <span className="ap-role-badge">{formatDesconto(cupom)}</span>
+                    <span className={`ap-status ${cupom.ativo ? "is-active" : ""}`} style={{ cursor: "default" }}>
+                      {cupom.ativo ? "Ativo" : "Inativo"}
+                    </span>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-ghost ap-btn-icon"
+                      onClick={() => openEditModal(cupom)}
+                      aria-label={`Editar ${cupom.codigo}`}
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className="ap-btn ap-btn-danger"
+                      onClick={() => setPendingDelete(cupom)}
+                      aria-label={`Excluir ${cupom.codigo}`}
+                    >
+                      <Trash size={15} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+
+            <div className="ap-item-cards">
+              {filteredCupons.map((cupom) => (
+                <div key={cupom.id} className={`ap-item-card${cupom.ativo ? "" : " is-oculto"}`}>
+                  <div className="ap-item-card-header">
+                    <div>
+                      <div className="ap-item-card-title">{cupom.codigo}</div>
+                      <span className="ap-role-badge ap-item-card-price" style={{ marginLeft: 0 }}>
+                        {formatDesconto(cupom)}
+                      </span>
+                    </div>
+                    <div className="ap-item-card-actions">
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn-ghost ap-btn-icon"
+                        onClick={() => openEditModal(cupom)}
+                        aria-label={`Editar ${cupom.codigo}`}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn-danger ap-btn-icon"
+                        onClick={() => setPendingDelete(cupom)}
+                        aria-label={`Excluir ${cupom.codigo}`}
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="ap-item-card-footer">
+                    <span className={`ap-status ${cupom.ativo ? "is-active" : ""}`} style={{ cursor: "default" }}>
+                      {cupom.ativo ? "Ativo" : "Inativo"}
+                    </span>
+                    <span className="ap-table-sub">Válido até {formatData(cupom.validoAte)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
       {modalOpen && (
