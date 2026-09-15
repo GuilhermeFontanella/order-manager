@@ -6,7 +6,7 @@ import Pagination from '../components/Pagination'
 import PedidoDetalheModal from '../components/PedidoDetalheModal'
 import { listPedidosPaginado, updatePedidoStatusManual, type StatusPedidoManual } from '../../../../services/pedidosStaff'
 import { listMesas, type Mesa } from '../../../../services/mesas'
-import type { MetodoPagamento, Pedido, StatusPedido } from '../../../../services/storefront'
+import { TIPO_ENTREGA_LABEL, type MetodoPagamento, type Pedido, type StatusPedido } from '../../../../services/storefront'
 import { fmt } from '../../../../data/menu'
 import { getApiErrorMessage } from '../../../../services/apiClient'
 
@@ -262,7 +262,7 @@ export default function PedidosSection() {
                   {pedidos.map(pedido => (
                     <tr key={pedido.id}>
                       <td className="ap-table-label">#{pedido.numeroSequencial}</td>
-                      <td className="ap-table-sub">Mesa {pedido.mesa.numero}</td>
+                      <td className="ap-table-sub">{pedido.mesa ? `Mesa ${pedido.mesa.numero}` : TIPO_ENTREGA_LABEL[pedido.tipoEntrega]}</td>
                       <td className="ap-table-sub">{pedido.nomeCliente}</td>
                       <td className="ap-table-sub">
                         {pedido.itens.reduce((total, item) => total + item.quantidade, 0)} item(ns)
@@ -298,7 +298,7 @@ export default function PedidosSection() {
                 <div key={pedido.id} className="ap-item-card">
                   <div className="ap-item-card-header">
                     <div>
-                      <div className="ap-item-card-title">#{pedido.numeroSequencial} · Mesa {pedido.mesa.numero}</div>
+                      <div className="ap-item-card-title">#{pedido.numeroSequencial} · {pedido.mesa ? `Mesa ${pedido.mesa.numero}` : TIPO_ENTREGA_LABEL[pedido.tipoEntrega]}</div>
                       <div className="ap-item-card-price" style={{ marginTop: 6 }}>
                         <span className={`ap-badge-status ap-badge-status-${pedido.status.toLowerCase()}`}>
                           {STATUS_LABEL[pedido.status]}

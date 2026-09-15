@@ -15,7 +15,7 @@ import { listPedidos, updatePedidoStatus } from '../../services/pedidosStaff'
 import { getApiErrorMessage } from '../../services/apiClient'
 import { usePedidosRealtime } from '../../services/realtime'
 import { listProdutos } from '../../services/produtos'
-import type { Pedido } from '../../services/storefront'
+import { TIPO_ENTREGA_LABEL, type Pedido } from '../../services/storefront'
 import ConfirmDialog from '../../components/ConfirmDialog'
 
 const CHAMADA_COOLDOWN_MS = 8000
@@ -27,7 +27,7 @@ function toCounterOrder(pedido: Pedido, call: CallState | undefined): CounterOrd
     id: pedido.id,
     senha: pedido.numeroSequencial,
     nome: pedido.nomeCliente,
-    mesa: pedido.mesa.numero,
+    origem: pedido.mesa ? `Mesa ${pedido.mesa.numero}` : TIPO_ENTREGA_LABEL[pedido.tipoEntrega],
     valor: Math.round(parseFloat(pedido.valorTotal) * 100),
     criadoEm: new Date(pedido.criadoEm).getTime(),
     status: pedido.status,
@@ -111,7 +111,7 @@ export default function Counter() {
   useEffect(() => {
     const prontos = orders
       .filter(o => o.status === 'PRONTO' && o.prontoEm != null)
-      .map(o => ({ id: o.id, senha: o.senha, nome: o.nome, mesa: o.mesa, prontoEm: o.prontoEm as number }))
+      .map(o => ({ id: o.id, senha: o.senha, nome: o.nome, origem: o.origem, prontoEm: o.prontoEm as number }))
     writeReadyOrdersSnapshot({ prontos, lastCall })
   }, [orders, lastCall])
 
@@ -189,7 +189,7 @@ export default function Counter() {
       ...prev,
       [id]: { chamadas: (prev[id]?.chamadas ?? 0) + 1, cooldownUntil: Date.now() + CHAMADA_COOLDOWN_MS },
     }))
-    setLastCall({ senha: order.senha, nome: order.nome, mesa: order.mesa, calledAt: Date.now() })
+    setLastCall({ senha: order.senha, nome: order.nome, origem: order.origem, calledAt: Date.now() })
     setCallFlash(false)
     requestAnimationFrame(() => setCallFlash(true))
     setTimeout(() => setCallFlash(false), 1000)

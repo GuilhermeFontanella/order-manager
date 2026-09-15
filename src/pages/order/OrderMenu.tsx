@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { MoreVertical, Utensils } from "lucide-react";
+import { MoreVertical, Utensils, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MenuSections from "../../components/MenuSections";
 import CartBar from "../../components/CartBar";
@@ -30,6 +30,7 @@ export default function OrderMenu() {
     string | null
   >(null);
   const [mesa, setMesa] = useState<Mesa | null>(null);
+  const [semMesa, setSemMesa] = useState(false);
   const [cardapio, setCardapio] = useState<Category[]>([]);
   const [displayCategories, setDisplayCategories] = useState<Category[]>([]);
   const [appearance, setAppearance] = useState<ConfiguracaoRestaurante | null>(
@@ -51,27 +52,42 @@ export default function OrderMenu() {
 
     async function loadMesa() {
       try {
-        const [
-          data,
-          { mesa: mesaData, cardapio: cardapioData },
-          appearanceData,
-        ] = await Promise.all([
-          getMesaCategorias(session!.tenantSlug),
-          getMesaCardapio(session!.tenantSlug, session!.qrCodeToken),
-          getConfiguracaoRestaurante(session!.tenantSlug),
-        ]);
-        if (!isMounted) return;
-        setTenantSlug(session!.tenantSlug);
-        setMesa(mesaData);
-        setCategorias(data);
-        setCardapio(cardapioData);
-        setDisplayCategories(cardapioData);
-        setAppearance(appearanceData);
+        if (session!.qrCodeToken) {
+          const [
+            data,
+            { mesa: mesaData, cardapio: cardapioData },
+            appearanceData,
+          ] = await Promise.all([
+            getMesaCategorias(session!.tenantSlug),
+            getMesaCardapio(session!.tenantSlug, session!.qrCodeToken),
+            getConfiguracaoRestaurante(session!.tenantSlug),
+          ]);
+          if (!isMounted) return;
+          setTenantSlug(session!.tenantSlug);
+          setMesa(mesaData);
+          setCategorias(data);
+          setCardapio(cardapioData);
+          setDisplayCategories(cardapioData);
+          setAppearance(appearanceData);
+        } else {
+          const [data, cardapioData, appearanceData] = await Promise.all([
+            getMesaCategorias(session!.tenantSlug),
+            buscarProdutosCardapio(session!.tenantSlug, {}),
+            getConfiguracaoRestaurante(session!.tenantSlug),
+          ]);
+          if (!isMounted) return;
+          setTenantSlug(session!.tenantSlug);
+          setSemMesa(true);
+          setCategorias(data);
+          setCardapio(cardapioData);
+          setDisplayCategories(cardapioData);
+          setAppearance(appearanceData);
+        }
       } catch {
         if (!isMounted) return;
         clearMesaSession();
         setError(
-          "Não foi possível carregar a mesa. Escaneie o QR code novamente.",
+          "Não foi possível carregar o cardápio. Escaneie o QR code novamente.",
         );
       } finally {
         if (isMounted) setLoading(false);
@@ -236,6 +252,14 @@ export default function OrderMenu() {
                     </button>
                   </div>
                 ) : null}
+              </div>
+            ) : semMesa ? (
+              <div
+                className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold"
+                style={{ background: "var(--glass-1)", boxShadow: "var(--ring-inner)", backdropFilter: "var(--blur-glass)" }}
+              >
+                <ShoppingBag size={16} />
+                <span>Retirada ou entrega</span>
               </div>
             ) : !loading ? (
               <div className="rounded-3xl px-4 py-3" style={{ background: "var(--surface-card)", backdropFilter: "var(--blur-glass)", boxShadow: "var(--ring-inner)" }}>

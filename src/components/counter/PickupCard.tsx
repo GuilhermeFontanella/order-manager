@@ -39,7 +39,7 @@ export default function PickupCard({ order, now, papel, isNew, onEntregar, onCha
       </div>
 
       <div style={{ display: 'flex', gap: 8, margin: '8px 0' }}>
-        <span className="counter-mesa-chip">Mesa {order.mesa}</span>
+        <span className="counter-mesa-chip">{order.origem}</span>
         <span className="counter-mesa-chip">{fmt(order.valor)}</span>
       </div>
 

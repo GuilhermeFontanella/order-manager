@@ -25,7 +25,7 @@ export default function DeliveredList({ orders, now, papel, onReverter }: Props)
         {entregues.map(order => (
           <div className="counter-delivered-row" key={order.id}>
             <span className="counter-delivered-senha">#{order.senha}</span>
-            <span className="counter-delivered-nome">{order.nome} · Mesa {order.mesa}</span>
+            <span className="counter-delivered-nome">{order.nome} · {order.origem}</span>
             <span className="counter-delivered-time">{elapsedLabel(order.entregueEm ?? now, now)}</span>
             {podeReverter && (
               <button type="button" className="counter-btn-revert" onClick={() => onReverter(order.id)}>

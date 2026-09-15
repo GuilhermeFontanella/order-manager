@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../../components/Modal'
-import type { Pedido, StatusPedido } from '../../../../services/storefront'
+import { TIPO_ENTREGA_LABEL, type Pedido, type StatusPedido } from '../../../../services/storefront'
 import type { StatusPedidoManual } from '../../../../services/pedidosStaff'
 import { fmt } from '../../../../data/menu'
 
@@ -78,8 +78,12 @@ export default function PedidoDetalheModal({
           <input className="ap-input" value={`#${pedido.numeroSequencial}`} disabled />
         </div>
         <div className="ap-field">
-          <span className="ap-field-label">Mesa</span>
-          <input className="ap-input" value={`Mesa ${pedido.mesa.numero}`} disabled />
+          <span className="ap-field-label">Origem</span>
+          <input
+            className="ap-input"
+            value={pedido.mesa ? `Mesa ${pedido.mesa.numero}` : TIPO_ENTREGA_LABEL[pedido.tipoEntrega]}
+            disabled
+          />
         </div>
         <div className="ap-field">
           <span className="ap-field-label">Cliente</span>
@@ -97,6 +101,16 @@ export default function PedidoDetalheModal({
           <span className="ap-field-label">Token de autorização</span>
           <input className="ap-input" value={pedido.pagamento?.gatewayTransactionId ?? '—'} disabled />
         </div>
+        {pedido.tipoEntrega === 'DELIVERY' && (
+          <div className="ap-field" style={{ gridColumn: '1 / -1' }}>
+            <span className="ap-field-label">Endereço de entrega</span>
+            <input
+              className="ap-input"
+              value={`${pedido.enderecoRua ?? ''}, ${pedido.enderecoNumero ?? ''} — ${pedido.enderecoBairro ?? ''}, ${pedido.enderecoCidade ?? ''} — CEP ${pedido.enderecoCep ?? ''}`}
+              disabled
+            />
+          </div>
+        )}
       </div>
 
       <div className="ap-field" style={{ marginTop: 14 }}>

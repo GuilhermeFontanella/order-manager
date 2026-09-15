@@ -4,7 +4,7 @@ import { elapsedLabel } from './utils'
 export type LastCall = {
   senha: number
   nome: string
-  mesa: number
+  origem: string
   calledAt: number
 } | null
 
@@ -22,7 +22,7 @@ export default function CallPanel({ lastCall, now, flash, onOpenDisplay }: Props
       <div className="counter-call-info-flex">
         <div className="counter-call-info-label">Painel de chamada</div>
         <div className="counter-call-info-main">
-          {lastCall ? `#${lastCall.senha} · ${lastCall.nome} · Mesa ${lastCall.mesa}` : 'Nenhuma chamada ainda'}
+          {lastCall ? `#${lastCall.senha} · ${lastCall.nome} · ${lastCall.origem}` : 'Nenhuma chamada ainda'}
         </div>
         <div className="counter-call-info-time">
           {lastCall ? `Chamado ${elapsedLabel(lastCall.calledAt, now)}` : ''}
