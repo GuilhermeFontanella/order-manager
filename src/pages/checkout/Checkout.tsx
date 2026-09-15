@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Wallet } from 'lucide-react'
+import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Tag, Wallet, X } from 'lucide-react'
 import { useCart, cartItemUnitPrice } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { readMesaSession } from '../../lib/mesaSession'
-import { buscarStatusPagamento, createPedido, type MetodoPagamento, type PedidoCriado } from '../../services/storefront'
+import {
+  buscarStatusPagamento,
+  createPedido,
+  validarCupom,
+  type CupomAplicado,
+  type MetodoPagamento,
+  type PedidoCriado,
+} from '../../services/storefront'
+import { getApiErrorMessage } from '../../services/apiClient'
 import '../../styles/ember-theme.css'
 import IconButton from '../../components/ember/IconButton'
 import Button from '../../components/ember/Button'
@@ -114,6 +122,14 @@ export default function Checkout() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const [codigoCupomInput, setCodigoCupomInput] = useState('')
+  const [cupomAplicado, setCupomAplicado] = useState<CupomAplicado | null>(null)
+  const [cupomLoading, setCupomLoading] = useState(false)
+  const [cupomError, setCupomError] = useState<string | null>(null)
+
+  const valorDescontoCentavos = cupomAplicado ? Math.round(parseFloat(cupomAplicado.valorDesconto) * 100) : 0
+  const totalFinal = total - valorDescontoCentavos
+
   const [copied, setCopied] = useState(false)
   const [numeroPedidoConfirmado, setNumeroPedidoConfirmado] = useState<number | null>(null)
   const pixCode = pedido?.pagamento?.pixQrCode ?? ''
@@ -177,6 +193,31 @@ export default function Checkout() {
     }))
   }
 
+  async function handleAplicarCupom() {
+    const session = readMesaSession()
+    if (!session) { setCupomError('Sessão da mesa expirada. Escaneie o QR code novamente.'); return }
+    const codigo = codigoCupomInput.trim()
+    if (!codigo) return
+
+    setCupomLoading(true)
+    setCupomError(null)
+    try {
+      const resultado = await validarCupom(session.tenantSlug, { codigo, itens: buildItens() })
+      setCupomAplicado(resultado)
+    } catch (err) {
+      setCupomAplicado(null)
+      setCupomError(getApiErrorMessage(err, 'Não foi possível aplicar o cupom.'))
+    } finally {
+      setCupomLoading(false)
+    }
+  }
+
+  function handleRemoverCupom() {
+    setCupomAplicado(null)
+    setCodigoCupomInput('')
+    setCupomError(null)
+  }
+
   // PIX: cria pedido agora e exibe QR code para pagamento
   async function handleConfirmPedidoPix() {
     const session = readMesaSession()
@@ -190,6 +231,7 @@ export default function Checkout() {
         nomeCliente: nome.trim(),
         pagamento: { metodo: 'PIX' },
         itens: buildItens(),
+        codigoCupom: cupomAplicado?.codigo,
       })
       setPedido(created)
       setStep('pix')
@@ -258,6 +300,7 @@ export default function Checkout() {
           installments: 1,
         },
         itens: buildItens(),
+        codigoCupom: cupomAplicado?.codigo,
       })
 
       if (criado.pagamento?.status === 'APROVADO') {
@@ -326,7 +369,7 @@ export default function Checkout() {
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={0} onClose={() => navigate(-1)} />
         <div className="px-4 pb-24">
-          <ItemSummaryCard itemCount={itemCount} total={total} />
+          <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
           <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como podemos te chamar?</h2>
           <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Vamos usar esse nome no painel do balcão para chamar você quando o pedido estiver pronto.
@@ -360,7 +403,7 @@ export default function Checkout() {
       <div className="ember-theme min-h-screen">
         <CheckoutHeader active={1} onClose={() => setStep('identificacao')} />
         <div className="px-4 pb-24">
-          <ItemSummaryCard itemCount={itemCount} total={total} />
+          <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
           <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como você vai pagar?</h2>
           <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
             Escolha a forma de pagamento para enviar o pedido para a cozinha.
@@ -438,7 +481,68 @@ export default function Checkout() {
                 </GlassCard>
               </li>
             ))}
+            {cupomAplicado && (
+              <li>
+                <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div className="text-left flex items-center gap-2">
+                    <Tag className="h-4 w-4" style={{ color: 'var(--accent)' }} />
+                    <div>
+                      <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>Cupom {cupomAplicado.codigo}</div>
+                      <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
+                        {cupomAplicado.tipoDesconto === 'PERCENTUAL' ? `${cupomAplicado.valor}% de desconto` : 'Valor fixo de desconto'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span style={{ font: 'var(--text-title)', color: 'var(--accent)' }}>-{fmt(valorDescontoCentavos)}</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoverCupom}
+                      aria-label="Remover cupom"
+                      className="flex h-7 w-7 items-center justify-center rounded-full"
+                      style={{ background: 'var(--surface-control)', color: 'var(--text-muted)' }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </GlassCard>
+              </li>
+            )}
           </ul>
+
+          <div className="mt-4">
+            {!cupomAplicado ? (
+              <GlassCard style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-2)' }}>
+                <Tag className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <input
+                  value={codigoCupomInput}
+                  onChange={event => setCodigoCupomInput(event.target.value.toUpperCase())}
+                  placeholder="Código do cupom"
+                  className="flex-1 min-w-0 bg-transparent outline-none"
+                  style={{ font: 'var(--text-body)', color: 'var(--text-primary)' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAplicarCupom}
+                  disabled={cupomLoading || !codigoCupomInput.trim()}
+                  className="shrink-0 px-3 py-1.5"
+                  style={{
+                    borderRadius: 'var(--r-sm)',
+                    background: 'var(--surface-control)',
+                    color: 'var(--text-primary)',
+                    font: 'var(--text-caption)',
+                    opacity: cupomLoading || !codigoCupomInput.trim() ? 0.5 : 1,
+                  }}
+                >
+                  {cupomLoading ? 'Aplicando...' : 'Aplicar'}
+                </button>
+              </GlassCard>
+            ) : null}
+            {cupomError && (
+              <p className="mt-2" style={{ font: 'var(--text-caption)', color: 'var(--danger)' }}>{cupomError}</p>
+            )}
+          </div>
+
           {submitError && (
             <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{submitError}</p>
           )}
@@ -446,7 +550,7 @@ export default function Checkout() {
             <GlassCard style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div className="text-left">
                 <div style={{ font: 'var(--text-label)', color: 'var(--text-muted)' }}>Total</div>
-                <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(total)}</div>
+                <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(totalFinal)}</div>
               </div>
               <IconButton
                 icon={Check}
@@ -477,7 +581,7 @@ export default function Checkout() {
           {pedido && (
             <p className="mb-2 text-right" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Pedido nº {pedido.numeroSequencial}</p>
           )}
-          <ItemSummaryCard itemCount={itemCount} total={total} />
+          <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
 
           <GlassCard style={{ padding: 'var(--sp-6)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {pixQrSrc ? (
@@ -487,7 +591,7 @@ export default function Checkout() {
                 <QrCode size={48} style={{ color: 'var(--text-muted)', opacity: 0.4 }} />
               </div>
             )}
-            <div className="mt-4" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{fmt(total)}</div>
+            <div className="mt-4" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{fmt(totalFinal)}</div>
             <p className="mt-2 text-center" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
               Abra o app do seu banco e escaneie o código, ou copie e cole na área Pix Copia e Cola.
             </p>
@@ -542,7 +646,7 @@ export default function Checkout() {
           : [{ supportedMethods: 'https://google.com/pay', data: { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [{ type: 'CARD', parameters: { allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'], allowedCardNetworks: ['MASTERCARD', 'VISA', 'ELO'] }, tokenizationSpecification: { type: 'PAYMENT_GATEWAY', parameters: { gateway: 'mercadopago', gatewayMerchantId: MP_PUBLIC_KEY } } }], merchantInfo: { merchantName: 'Restaurante' } } }]
 
         const details: PaymentDetailsInit = {
-          total: { label: 'Total do pedido', amount: { currency: 'BRL', value: (total / 100).toFixed(2) } },
+          total: { label: 'Total do pedido', amount: { currency: 'BRL', value: (totalFinal / 100).toFixed(2) } },
         }
 
         const request = new PaymentRequest(supportedMethods, details)
@@ -567,6 +671,7 @@ export default function Checkout() {
             installments: 1,
           },
           itens: buildItens(),
+          codigoCupom: cupomAplicado?.codigo,
         })
 
         await paymentResponse.complete('success')
@@ -593,7 +698,7 @@ export default function Checkout() {
         <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
         <div className="px-4 pb-24">
           <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>{walletLabel}</h2>
-          <ItemSummaryCard itemCount={itemCount} total={total} />
+          <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
           <GlassCard style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--sp-8)', gap: 'var(--sp-4)' }}>
             <div
               className="flex h-16 w-16 items-center justify-center rounded-2xl"
@@ -615,7 +720,7 @@ export default function Checkout() {
             <p style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', textAlign: 'center' }}>
               Toque no botão abaixo para autenticar o pagamento com {walletLabel}. Seu dispositivo solicitará confirmação biométrica ou por PIN.
             </p>
-            <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(total)}</div>
+            <div style={{ font: 'var(--text-h2)', color: 'var(--text-price)' }}>{fmt(totalFinal)}</div>
           </GlassCard>
           {walletError && (
             <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{walletError}</p>
@@ -646,7 +751,7 @@ export default function Checkout() {
         {pedido && (
           <p className="mb-2 text-right" style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Pedido nº {pedido.numeroSequencial}</p>
         )}
-        <ItemSummaryCard itemCount={itemCount} total={total} />
+        <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
         <div className="space-y-5">
           <TextField id="card-number" label="Número do cartão" value={cardNumber} onChange={event => setCardNumber(formatCardNumber(event.target.value))} placeholder="0000 0000 0000 0000" inputMode="numeric" />
           <TextField id="card-name" label="Nome impresso no cartão" value={cardName} onChange={event => setCardName(event.target.value)} placeholder="Como está no cartão" />
@@ -660,7 +765,7 @@ export default function Checkout() {
           <p className="mt-4 rounded-2xl px-4 py-3" style={{ background: 'color-mix(in srgb, var(--danger) 16%, transparent)', color: 'var(--danger)', font: 'var(--text-body)' }}>{cardError}</p>
         )}
         <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!cardValid || processingCard || !mpLoaded} onClick={handlePagarCartao}>
-          {processingCard ? 'Processando...' : `Pagar ${fmt(total)}`}
+          {processingCard ? 'Processando...' : `Pagar ${fmt(totalFinal)}`}
         </Button>
       </div>
     </div>

@@ -38,6 +38,19 @@ export type CreatePedidoPayload = {
     installments?: number;
   };
   itens: CreatePedidoItemInput[];
+  codigoCupom?: string;
+};
+
+export type TipoDescontoCupom = "PERCENTUAL" | "VALOR_FIXO";
+
+export type CupomAplicado = {
+  cupomId: string;
+  codigo: string;
+  tipoDesconto: TipoDescontoCupom;
+  valor: string;
+  subtotal: string;
+  valorDesconto: string;
+  valorFinal: string;
 };
 
 export type Pedido = {
@@ -48,6 +61,8 @@ export type Pedido = {
   numeroSequencial: number;
   status: StatusPedido;
   valorTotal: string;
+  valorDesconto: string;
+  cupom: { id: string; codigo: string; tipoDesconto: TipoDescontoCupom; valor: string } | null;
   criadoEm: string;
   pagoEm: string | null;
   prontoEm: string | null;
@@ -166,6 +181,14 @@ export async function createPedido(
     `/r/${tenantSlug}/pedidos`,
     payload,
   );
+  return response.data;
+}
+
+export async function validarCupom(
+  tenantSlug: string,
+  payload: { codigo: string; itens: CreatePedidoItemInput[] },
+): Promise<CupomAplicado> {
+  const response = await api.post<CupomAplicado>(`/r/${tenantSlug}/cupons/validar`, payload);
   return response.data;
 }
 
