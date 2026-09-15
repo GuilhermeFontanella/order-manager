@@ -134,7 +134,7 @@ export default function AparenciaSection() {
         className="ap-settings-stack"
         style={{ maxWidth: "none", marginBottom: "16px" }}
       >
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4 min-[860px]:flex-row">
           <div className="ap-card flex-1 text-left">
             <div className="ap-card-title">Identidade visual</div>
             <div className="ap-card-sub">
@@ -303,7 +303,7 @@ export default function AparenciaSection() {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 min-[860px]:flex-row">
         <div className="ap-card text-left flex-1">
           <div className="ap-card-title">
             Exibição de informações no cardápio
