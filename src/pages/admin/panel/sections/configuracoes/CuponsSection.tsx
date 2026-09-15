@@ -234,7 +234,7 @@ export default function CuponsSection() {
                     </div>
                   </div>
 
-                  <div className="ap-item-card-footer" style={{ justifyContent: "flex-start" }}>
+                  <div className="ap-item-card-footer">
                     <span className={`ap-status ${cupom.ativo ? "is-active" : ""}`} style={{ cursor: "default" }}>
                       {cupom.ativo ? "Ativo" : "Inativo"}
                     </span>
