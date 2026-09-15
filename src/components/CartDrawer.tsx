@@ -16,7 +16,11 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
 
   return (
     <div className="ember-theme fixed inset-0 z-50">
-      <div className="absolute inset-0" style={{ background: 'var(--glass-lo)' }} onClick={onClose} />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'var(--glass-lo)', backdropFilter: 'var(--blur-scrim)', WebkitBackdropFilter: 'var(--blur-scrim)' }}
+        onClick={onClose}
+      />
 
       <motion.aside
         initial={{ y: '100%' }}
