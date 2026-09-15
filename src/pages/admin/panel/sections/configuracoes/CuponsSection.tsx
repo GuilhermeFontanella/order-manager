@@ -206,7 +206,7 @@ export default function CuponsSection() {
 
             <div className="ap-item-cards">
               {filteredCupons.map((cupom) => (
-                <div key={cupom.id} className="ap-item-card">
+                <div key={cupom.id} className={`ap-item-card${cupom.ativo ? "" : " is-oculto"}`}>
                   <div className="ap-item-card-header">
                     <div>
                       <div className="ap-item-card-title">{cupom.codigo}</div>
@@ -234,7 +234,7 @@ export default function CuponsSection() {
                     </div>
                   </div>
 
-                  <div className="ap-item-card-footer">
+                  <div className="ap-item-card-footer" style={{ justifyContent: "flex-start" }}>
                     <span className={`ap-status ${cupom.ativo ? "is-active" : ""}`} style={{ cursor: "default" }}>
                       {cupom.ativo ? "Ativo" : "Inativo"}
                     </span>
