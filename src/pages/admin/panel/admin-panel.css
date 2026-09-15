@@ -1027,6 +1027,24 @@
   padding-top: 10px;
   border-top: 1px solid var(--ap-border-soft);
 }
+.ap-item-card-body {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ap-border-soft);
+}
+.ap-item-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  font-size: 12.5px;
+}
+.ap-item-card-row-label {
+  color: var(--ap-ink-faint);
+}
 
 /* ---------- Section placeholder ---------- */
 .ap-placeholder {

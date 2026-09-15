@@ -250,56 +250,106 @@ export default function EstoqueSection() {
         ) : insumosFiltrados.length === 0 ? (
           <p className="ap-card-sub" style={{ marginBottom: 0 }}>Nenhum insumo encontrado para esses filtros.</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="ap-table">
-              <thead>
-                <tr>
-                  <th>Insumo</th>
-                  <th>Categoria</th>
-                  <th>Estoque</th>
-                  <th>Itens que usam</th>
-                  <th aria-label="Ações" />
-                </tr>
-              </thead>
-              <tbody>
-                {insumosFiltrados.map(insumo => (
-                  <tr key={insumo.id}>
-                    <td className="ap-table-label">
-                      {insumo.nome}
-                      {isEstoqueBaixo(insumo) && <span className="ap-badge-low-stock">Estoque baixo</span>}
-                    </td>
-                    <td className="ap-table-sub">{insumo.categoria.nome}</td>
-                    <td className="ap-ranked-value">
-                      {parseFloat(insumo.quantidadeEstoque)} {UNIDADE_LABEL[insumo.unidadeMedida]}
-                    </td>
-                    <td className="ap-table-sub">
-                      {insumo._count.produtos} {insumo._count.produtos === 1 ? 'item' : 'itens'}
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        <button
-                          type="button"
-                          className="ap-btn ap-btn-ghost ap-btn-icon"
-                          onClick={() => abrirEdicaoInsumo(insumo)}
-                          aria-label="Editar insumo"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="ap-btn ap-btn-danger ap-btn-icon"
-                          onClick={() => setPendingDeleteInsumo(insumo)}
-                          aria-label="Remover insumo"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="ap-table-wrap" style={{ overflowX: 'auto' }}>
+              <table className="ap-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Categoria</th>
+                    <th>Estoque</th>
+                    <th>Itens que usam</th>
+                    <th aria-label="Ações" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {insumosFiltrados.map(insumo => (
+                    <tr key={insumo.id}>
+                      <td className="ap-table-label">
+                        {insumo.nome}
+                        {isEstoqueBaixo(insumo) && <span className="ap-badge-low-stock">Estoque baixo</span>}
+                      </td>
+                      <td className="ap-table-sub">{insumo.categoria.nome}</td>
+                      <td className="ap-ranked-value">
+                        {parseFloat(insumo.quantidadeEstoque)} {UNIDADE_LABEL[insumo.unidadeMedida]}
+                      </td>
+                      <td className="ap-table-sub">
+                        {insumo._count.produtos} {insumo._count.produtos === 1 ? 'item' : 'itens'}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-ghost ap-btn-icon"
+                            onClick={() => abrirEdicaoInsumo(insumo)}
+                            aria-label="Editar insumo"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-danger ap-btn-icon"
+                            onClick={() => setPendingDeleteInsumo(insumo)}
+                            aria-label="Remover insumo"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ap-item-cards">
+              {insumosFiltrados.map(insumo => (
+                <div key={insumo.id} className="ap-item-card">
+                  <div className="ap-item-card-header">
+                    <div>
+                      <div className="ap-item-card-title">{insumo.nome}</div>
+                      {isEstoqueBaixo(insumo) && <span className="ap-badge-low-stock" style={{ marginLeft: 0 }}>Estoque baixo</span>}
+                    </div>
+                    <div className="ap-item-card-actions">
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn-ghost ap-btn-icon"
+                        onClick={() => abrirEdicaoInsumo(insumo)}
+                        aria-label="Editar insumo"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn-danger ap-btn-icon"
+                        onClick={() => setPendingDeleteInsumo(insumo)}
+                        aria-label="Remover insumo"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="ap-item-card-body">
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Categoria</span>
+                      <span>{insumo.categoria.nome}</span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Estoque</span>
+                      <span className="ap-ranked-value">
+                        {parseFloat(insumo.quantidadeEstoque)} {UNIDADE_LABEL[insumo.unidadeMedida]}
+                      </span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Itens que usam</span>
+                      <span>{insumo._count.produtos} {insumo._count.produtos === 1 ? 'item' : 'itens'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

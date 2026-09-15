@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Search } from 'lucide-react'
+import { Maximize2, Pencil, Search } from 'lucide-react'
 import Accordion from '../../../../components/Accordion'
 import MultiSelectDropdown from '../../../../components/MultiSelectDropdown'
 import Pagination from '../components/Pagination'
@@ -242,55 +242,107 @@ export default function PedidosSection() {
             {buscaOuFiltrosAtivos ? 'Nenhum pedido encontrado para esses filtros.' : 'Nenhum pedido registrado ainda.'}
           </p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="ap-table">
-              <thead>
-                <tr>
-                  <th>Nº</th>
-                  <th>Mesa</th>
-                  <th>Cliente</th>
-                  <th>Itens</th>
-                  <th>Total</th>
-                  <th>Pagamento</th>
-                  <th>Status</th>
-                  <th>Horário</th>
-                  <th aria-label="Ações" />
-                </tr>
-              </thead>
-              <tbody>
-                {pedidos.map(pedido => (
-                  <tr key={pedido.id}>
-                    <td className="ap-table-label">#{pedido.numeroSequencial}</td>
-                    <td className="ap-table-sub">Mesa {pedido.mesa.numero}</td>
-                    <td className="ap-table-sub">{pedido.nomeCliente}</td>
-                    <td className="ap-table-sub">
-                      {pedido.itens.reduce((total, item) => total + item.quantidade, 0)} item(ns)
-                    </td>
-                    <td className="ap-ranked-value">{fmt(Math.round(parseFloat(pedido.valorTotal) * 100))}</td>
-                    <td className="ap-table-sub">{pedido.pagamento ? METODO_LABEL[pedido.pagamento.metodo] : '—'}</td>
-                    <td>
-                      <span className={`ap-badge-status ap-badge-status-${pedido.status.toLowerCase()}`}>
-                        {STATUS_LABEL[pedido.status]}
-                      </span>
-                    </td>
-                    <td className="ap-table-sub">{horarioLabel(pedido.criadoEm)}</td>
-                    <td>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <button
-                          type="button"
-                          className="ap-btn ap-btn-ghost ap-btn-icon"
-                          onClick={() => abrirDetalhePedido(pedido)}
-                          aria-label="Ver pedido"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="ap-table-wrap" style={{ overflowX: 'auto' }}>
+              <table className="ap-table">
+                <thead>
+                  <tr>
+                    <th>Nº</th>
+                    <th>Mesa</th>
+                    <th>Cliente</th>
+                    <th>Itens</th>
+                    <th>Total</th>
+                    <th>Pagamento</th>
+                    <th>Status</th>
+                    <th>Horário</th>
+                    <th aria-label="Ações" />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {pedidos.map(pedido => (
+                    <tr key={pedido.id}>
+                      <td className="ap-table-label">#{pedido.numeroSequencial}</td>
+                      <td className="ap-table-sub">Mesa {pedido.mesa.numero}</td>
+                      <td className="ap-table-sub">{pedido.nomeCliente}</td>
+                      <td className="ap-table-sub">
+                        {pedido.itens.reduce((total, item) => total + item.quantidade, 0)} item(ns)
+                      </td>
+                      <td className="ap-ranked-value">{fmt(Math.round(parseFloat(pedido.valorTotal) * 100))}</td>
+                      <td className="ap-table-sub">{pedido.pagamento ? METODO_LABEL[pedido.pagamento.metodo] : '—'}</td>
+                      <td>
+                        <span className={`ap-badge-status ap-badge-status-${pedido.status.toLowerCase()}`}>
+                          {STATUS_LABEL[pedido.status]}
+                        </span>
+                      </td>
+                      <td className="ap-table-sub">{horarioLabel(pedido.criadoEm)}</td>
+                      <td>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-ghost ap-btn-icon"
+                            onClick={() => abrirDetalhePedido(pedido)}
+                            aria-label="Ver pedido"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ap-item-cards">
+              {pedidos.map(pedido => (
+                <div key={pedido.id} className="ap-item-card">
+                  <div className="ap-item-card-header">
+                    <div>
+                      <div className="ap-item-card-title">#{pedido.numeroSequencial} · Mesa {pedido.mesa.numero}</div>
+                      <div className="ap-item-card-price" style={{ marginTop: 6 }}>
+                        <span className={`ap-badge-status ap-badge-status-${pedido.status.toLowerCase()}`}>
+                          {STATUS_LABEL[pedido.status]}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="ap-item-card-actions">
+                      <button
+                        type="button"
+                        className="ap-btn ap-btn-ghost ap-btn-icon"
+                        onClick={() => abrirDetalhePedido(pedido)}
+                        aria-label="Ver pedido"
+                      >
+                        <Maximize2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="ap-item-card-body">
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Cliente</span>
+                      <span>{pedido.nomeCliente}</span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Itens</span>
+                      <span>{pedido.itens.reduce((total, item) => total + item.quantidade, 0)} item(ns)</span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Total</span>
+                      <span className="ap-ranked-value">{fmt(Math.round(parseFloat(pedido.valorTotal) * 100))}</span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Pagamento</span>
+                      <span>{pedido.pagamento ? METODO_LABEL[pedido.pagamento.metodo] : '—'}</span>
+                    </div>
+                    <div className="ap-item-card-row">
+                      <span className="ap-item-card-row-label">Horário</span>
+                      <span>{horarioLabel(pedido.criadoEm)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
