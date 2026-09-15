@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Maximize2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { listCategorias, createCategoria, updateCategoria, deleteCategoria, type Categoria, type CategoriaInput } from '../../../../services/categorias'
 import { listInsumos, type Insumo } from '../../../../services/insumos'
 import {
@@ -15,6 +15,7 @@ import { fmt } from '../../../../data/menu'
 import ConfirmDialog from '../../../../components/ConfirmDialog'
 import CategoriaFormModal from '../components/CategoriaFormModal'
 import ProdutoFormModal from '../components/ProdutoFormModal'
+import ProdutoDetalheModal from '../components/ProdutoDetalheModal'
 
 const SEM_CATEGORIA_ID = '__sem-categoria__'
 
@@ -39,6 +40,8 @@ export default function CardapioSection() {
 
   const [pendingDeleteCategoria, setPendingDeleteCategoria] = useState<Categoria | null>(null)
   const [pendingDeleteProduto, setPendingDeleteProduto] = useState<ProdutoDetalhado | null>(null)
+
+  const [detalheProduto, setDetalheProduto] = useState<ProdutoDetalhado | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -134,9 +137,15 @@ export default function CardapioSection() {
   }
 
   function abrirEdicaoItem(produto: ProdutoDetalhado) {
+    setDetalheProduto(null)
     setEditingProduto(produto)
     setProdutoError(null)
     setProdutoModalOpen(true)
+  }
+
+  function abrirRemocaoItem(produto: ProdutoDetalhado) {
+    setDetalheProduto(null)
+    setPendingDeleteProduto(produto)
   }
 
   async function handleSubmitProduto(payload: ProdutoDetalhadoInput) {
@@ -248,65 +257,121 @@ export default function CardapioSection() {
             {itensDaAba.length === 0 ? (
               <p className="ap-card-sub" style={{ marginBottom: 0 }}>Nenhum item nesta categoria ainda.</p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table className="ap-table text-left">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Descrição</th>
-                      <th>Preço</th>
-                      <th>Detalhes</th>
-                      <th>Status</th>
-                      <th aria-label="Ações" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {itensDaAba.map(produto => (
-                      <tr key={produto.id}>
-                        <td className="ap-table-label">{produto.nome}</td>
-                        <td className="ap-table-sub">{produto.descricao || '—'}</td>
-                        <td className="ap-ranked-value">{fmt(Math.round(parseFloat(produto.preco) * 100))}</td>
-                        <td className="ap-table-sub">
+              <>
+                <div className="ap-table-wrap" style={{ overflowX: 'auto' }}>
+                  <table className="ap-table text-left">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Descrição</th>
+                        <th>Preço</th>
+                        <th>Detalhes</th>
+                        <th>Status</th>
+                        <th aria-label="Ações" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itensDaAba.map(produto => (
+                        <tr key={produto.id}>
+                          <td className="ap-table-label">{produto.nome}</td>
+                          <td className="ap-table-sub">{produto.descricao || '—'}</td>
+                          <td className="ap-ranked-value">{fmt(Math.round(parseFloat(produto.preco) * 100))}</td>
+                          <td className="ap-table-sub">
+                            {[
+                              produto.gruposOpcao.length > 0 && `${produto.gruposOpcao.length} grupo(s) de opção`,
+                              produto.insumos.length > 0 && `${produto.insumos.length} insumo(s)`,
+                              produto.imagens.length > 0 && `${produto.imagens.length} foto(s)`,
+                            ]
+                              .filter(Boolean)
+                              .join(' · ') || '—'}
+                          </td>
+                          <td>
+                            {produto.disponivel ? (
+                              <span className="ap-ranked-value is-plain">Visível</span>
+                            ) : (
+                              <span className="ap-badge-low-stock">Oculto</span>
+                            )}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                              <button
+                                type="button"
+                                className="ap-btn ap-btn-ghost ap-btn-icon"
+                                onClick={() => abrirEdicaoItem(produto)}
+                                aria-label="Editar item"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="ap-btn ap-btn-danger ap-btn-icon"
+                                onClick={() => setPendingDeleteProduto(produto)}
+                                aria-label="Remover item"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="ap-item-cards">
+                  {itensDaAba.map(produto => (
+                    <div key={produto.id} className={`ap-item-card${produto.disponivel ? '' : ' is-oculto'}`}>
+                      <div className="ap-item-card-header">
+                        <div>
+                          <div className="ap-item-card-title">{produto.nome}</div>
+                          <div className="ap-ranked-value ap-item-card-price">{fmt(Math.round(parseFloat(produto.preco) * 100))}</div>
+                        </div>
+                        <div className="ap-item-card-actions">
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-ghost ap-btn-icon"
+                            onClick={() => setDetalheProduto(produto)}
+                            aria-label="Ver detalhes do item"
+                          >
+                            <Maximize2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-ghost ap-btn-icon"
+                            onClick={() => abrirEdicaoItem(produto)}
+                            aria-label="Editar item"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="ap-btn ap-btn-danger ap-btn-icon"
+                            onClick={() => setPendingDeleteProduto(produto)}
+                            aria-label="Remover item"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="ap-item-card-footer">
+                        {!produto.disponivel && (
+                          <span className="ap-badge-low-stock" style={{ marginLeft: 0 }}>Oculto</span>
+                        )}
+                        <span className="ap-table-sub" style={{ marginLeft: produto.disponivel ? 'auto' : undefined }}>
                           {[
-                            produto.gruposOpcao.length > 0 && `${produto.gruposOpcao.length} grupo(s) de opção`,
+                            produto.gruposOpcao.length > 0 && `${produto.gruposOpcao.length} grupo(s)`,
                             produto.insumos.length > 0 && `${produto.insumos.length} insumo(s)`,
                             produto.imagens.length > 0 && `${produto.imagens.length} foto(s)`,
                           ]
                             .filter(Boolean)
                             .join(' · ') || '—'}
-                        </td>
-                        <td>
-                          {produto.disponivel ? (
-                            <span className="ap-ranked-value is-plain">Visível</span>
-                          ) : (
-                            <span className="ap-badge-low-stock">Oculto</span>
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                            <button
-                              type="button"
-                              className="ap-btn ap-btn-ghost ap-btn-icon"
-                              onClick={() => abrirEdicaoItem(produto)}
-                              aria-label="Editar item"
-                            >
-                              <Pencil size={14} />
-                            </button>
-                            <button
-                              type="button"
-                              className="ap-btn ap-btn-danger ap-btn-icon"
-                              onClick={() => setPendingDeleteProduto(produto)}
-                              aria-label="Remover item"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </>
@@ -331,6 +396,14 @@ export default function CardapioSection() {
         error={produtoError}
         onSubmit={handleSubmitProduto}
         onClose={() => setProdutoModalOpen(false)}
+      />
+
+      <ProdutoDetalheModal
+        open={detalheProduto !== null}
+        produto={detalheProduto}
+        onEdit={abrirEdicaoItem}
+        onDelete={abrirRemocaoItem}
+        onClose={() => setDetalheProduto(null)}
       />
 
       <ConfirmDialog
