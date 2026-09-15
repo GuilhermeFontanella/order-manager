@@ -21,6 +21,7 @@ const SECTION_TITLES: Record<string, string> = {
   'dados-restaurante': 'Dados do restaurante',
   aparencia: 'Aparência',
   pagamento: 'Pagamento',
+  cupons: 'Cupons',
   mesas: 'Mesas',
   conta: 'Conta',
 }

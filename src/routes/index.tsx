@@ -22,6 +22,7 @@ import DadosRestauranteSection from '../pages/admin/panel/sections/configuracoes
 import AparenciaSection from '../pages/admin/panel/sections/configuracoes/AparenciaSection'
 import PagamentoSection from '../pages/admin/panel/sections/configuracoes/PagamentoSection'
 import MesasConfigSection from '../pages/admin/panel/sections/configuracoes/MesasConfigSection'
+import CuponsSection from '../pages/admin/panel/sections/configuracoes/CuponsSection'
 import ContaSection from '../pages/admin/panel/sections/configuracoes/ContaSection'
 import ChangePassword from '../pages/login/ChangePassword'
 import ResetPassword from '../pages/login/ResetPassword'
@@ -148,6 +149,7 @@ export function AppRoutes() {
             <Route path="dados-restaurante" element={<DadosRestauranteSection />} />
             <Route path="aparencia" element={<AparenciaSection />} />
             <Route path="pagamento" element={<PagamentoSection />} />
+            <Route path="cupons" element={<CuponsSection />} />
             <Route path="mesas" element={<MesasConfigSection />} />
             <Route path="conta" element={<ContaSection />} />
           </Route>
