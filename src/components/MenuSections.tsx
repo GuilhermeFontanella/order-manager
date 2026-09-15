@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Category, Item } from "../data/menu";
 import ProductCard from "./ProductCard";
+import ProductCardSkeleton from "./ProductCardSkeleton";
 import ItemSheet from "./ItemSheet";
 import { useCart } from "../context/CartContext";
 import DetailsSheet from "./DetailsSheet";
@@ -70,11 +71,13 @@ export default function MenuSections({
 
       <main className="px-4">
         {loading ? (
-          <div
-            className="rounded-3xl p-6 text-center"
-            style={{ background: "var(--surface-card)", color: "var(--text-muted)", boxShadow: "var(--ring-inner)" }}
-          >
-            Carregando cardápio...
+          <div aria-live="polite" aria-label="Carregando cardápio" className="mt-6">
+            <div className="skeleton mb-4 h-6 w-32" />
+            <div className="grid gap-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <ProductCardSkeleton key={index} />
+              ))}
+            </div>
           </div>
         ) : categories.length === 0 ? (
           <div

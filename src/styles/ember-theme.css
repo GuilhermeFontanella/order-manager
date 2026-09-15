@@ -206,3 +206,28 @@
   color: var(--text-on-accent);
   box-shadow: none;
 }
+
+.ember-theme .skeleton {
+  background-image: linear-gradient(
+    100deg,
+    var(--surface-control) 40%,
+    var(--glass-hi) 50%,
+    var(--surface-control) 60%
+  );
+  background-size: 200% 100%;
+  background-position: 180% 0;
+  animation: ember-skeleton-wave 1.4s ease-in-out infinite;
+  border-radius: var(--r-sm);
+}
+
+@keyframes ember-skeleton-wave {
+  to {
+    background-position: -20% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ember-theme .skeleton {
+    animation: none;
+  }
+}
