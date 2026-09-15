@@ -39,6 +39,7 @@
   --glass-3: rgba(18, 12, 9, 0.86);
   --glass-hi: rgba(255, 255, 255, 0.07);
   --glass-lo: rgba(0, 0, 0, 0.35);
+  --scrim-sheet: rgba(0, 0, 0, 0.6);
   --bg-app: var(--ink-1);
   --bg-elevated: var(--ink-3);
   --bg-sunken: var(--ink-0);
@@ -152,6 +153,7 @@
   --glass-3: rgba(255, 255, 255, 0.9);
   --glass-hi: rgba(20, 12, 8, 0.06);
   --glass-lo: rgba(30, 20, 15, 0.32);
+  --scrim-sheet: rgba(20, 12, 8, 0.55);
   --bg-app: var(--paper-2);
   --bg-elevated: var(--paper-1);
   --bg-sunken: var(--paper-3);
