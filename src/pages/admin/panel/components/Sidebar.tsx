@@ -23,6 +23,7 @@ const NAV_ITEMS = [
       { to: '/admin/configuracoes/aparencia', label: 'Aparência' },
       { to: '/admin/configuracoes/pagamento', label: 'Pagamento' },
       { to: '/admin/configuracoes/cupons', label: 'Cupons' },
+      { to: '/admin/configuracoes/area-atendimento', label: 'Área de atendimento' },
       { to: '/admin/configuracoes/mesas', label: 'Mesas' },
       { to: '/admin/configuracoes/conta', label: 'Conta' },
     ],

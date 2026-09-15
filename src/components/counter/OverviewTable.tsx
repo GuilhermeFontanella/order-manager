@@ -33,7 +33,7 @@ export default function OverviewTable({ orders, now }: { orders: CounterOrder[];
             <tr key={order.id}>
               <td className="counter-senha-cell">#{order.senha}</td>
               <td>{order.nome}</td>
-              <td>Mesa {order.mesa}</td>
+              <td>{order.origem}</td>
               <td>{order.itens.reduce((s, i) => s + i.qty, 0)} item(ns)</td>
               <td>{fmt(order.valor)}</td>
               <td><span className={`counter-status-badge ${order.status}`}>{STATUS_LABEL[order.status]}</span></td>

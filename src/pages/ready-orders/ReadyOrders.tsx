@@ -68,7 +68,7 @@ export default function ReadyOrders() {
               <div className="ro-call-label">Chamando</div>
               <div className="ro-call-senha">#{lastCall.senha}</div>
               <div className="ro-call-nome">{lastCall.nome}</div>
-              <div className="ro-call-mesa">Mesa {lastCall.mesa}</div>
+              <div className="ro-call-mesa">{lastCall.origem}</div>
               <div className="ro-call-time">Chamado {elapsedLabel(lastCall.calledAt, now)}</div>
             </>
           ) : (

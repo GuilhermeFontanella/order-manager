@@ -27,10 +27,28 @@ export type CreatePedidoItemInput = {
   opcoesSelecionadas?: OpcaoSelecionada[];
 };
 
+export type TipoEntrega = "RETIRADA_BALCAO" | "TAKE_AWAY" | "DELIVERY";
+
+export const TIPO_ENTREGA_LABEL: Record<TipoEntrega, string> = {
+  RETIRADA_BALCAO: "Retirada no balcão",
+  TAKE_AWAY: "Take away",
+  DELIVERY: "Delivery",
+};
+
+export type EnderecoEntrega = {
+  cep: string;
+  rua: string;
+  numero: string;
+  bairro: string;
+  cidade: string;
+};
+
 export type CreatePedidoPayload = {
-  mesaQrCodeToken: string;
+  mesaQrCodeToken?: string;
   nomeCliente: string;
   emailCliente?: string;
+  tipoEntrega: TipoEntrega;
+  endereco?: EnderecoEntrega;
   pagamento: {
     metodo: MetodoPagamento;
     cardToken?: string;
@@ -55,13 +73,19 @@ export type CupomAplicado = {
 
 export type Pedido = {
   id: string;
-  mesaId: string;
+  mesaId: string | null;
   nomeCliente: string;
   emailCliente: string | null;
   numeroSequencial: number;
   status: StatusPedido;
   valorTotal: string;
   valorDesconto: string;
+  tipoEntrega: TipoEntrega;
+  enderecoCep: string | null;
+  enderecoRua: string | null;
+  enderecoNumero: string | null;
+  enderecoBairro: string | null;
+  enderecoCidade: string | null;
   cupom: { id: string; codigo: string; tipoDesconto: TipoDescontoCupom; valor: string } | null;
   criadoEm: string;
   pagoEm: string | null;
@@ -88,7 +112,7 @@ export type Pedido = {
     pixQrCodeBase64: string | null;
     confirmadoEm: string | null;
   } | null;
-  mesa: Mesa;
+  mesa: Mesa | null;
 };
 
 export async function getMesaCardapio(
@@ -160,6 +184,13 @@ export type ConfiguracaoRestaurante = {
   mostrarFotos: boolean;
   mostrarIngredientes: boolean;
   mostrarPreco: boolean;
+  enderecoCep: string | null;
+  enderecoRua: string | null;
+  enderecoNumero: string | null;
+  enderecoBairro: string | null;
+  enderecoCidade: string | null;
+  permiteTakeaway: boolean;
+  permiteDelivery: boolean;
 };
 
 export async function getConfiguracaoRestaurante(
@@ -169,6 +200,36 @@ export async function getConfiguracaoRestaurante(
     `/r/${tenantSlug}/restaurante`,
   );
   return response.data;
+}
+
+export type AreaAtendimentoCidade = {
+  id: string;
+  cidade: string;
+  uf: string;
+  bairros: string[];
+};
+
+export async function getAreaAtendimento(
+  tenantSlug: string,
+): Promise<AreaAtendimentoCidade[]> {
+  const response = await api.get<AreaAtendimentoCidade[]>(
+    `/r/${tenantSlug}/area-atendimento`,
+  );
+  return response.data;
+}
+
+export function bairroAtendido(
+  cidades: AreaAtendimentoCidade[],
+  cidade: string,
+  bairro: string,
+): boolean {
+  const cidadeNormalizada = cidade.trim().toLowerCase();
+  const bairroNormalizado = bairro.trim().toLowerCase();
+  return cidades.some(
+    (c) =>
+      c.cidade.trim().toLowerCase() === cidadeNormalizada &&
+      c.bairros.some((b) => b.trim().toLowerCase() === bairroNormalizado),
+  );
 }
 
 export type PedidoCriado = Pedido & { confirmacaoToken: string };

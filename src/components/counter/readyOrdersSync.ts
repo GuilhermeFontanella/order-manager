@@ -2,13 +2,13 @@ export type ReadyOrderSnapshotItem = {
   id: string
   senha: number
   nome: string
-  mesa: number
+  origem: string
   prontoEm: number
 }
 
 export type ReadyOrdersSnapshot = {
   prontos: ReadyOrderSnapshotItem[]
-  lastCall: { senha: number; nome: string; mesa: number; calledAt: number } | null
+  lastCall: { senha: number; nome: string; origem: string; calledAt: number } | null
 }
 
 export const READY_ORDERS_STORAGE_KEY = 'botequim:readyOrdersSnapshot'

@@ -10,7 +10,7 @@ export type CounterOrder = {
   id: string
   senha: number
   nome: string
-  mesa: number
+  origem: string
   valor: number // centavos
   criadoEm: number
   status: CounterOrderStatus

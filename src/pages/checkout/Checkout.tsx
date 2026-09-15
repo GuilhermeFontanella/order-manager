@@ -1,22 +1,31 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { ArrowLeft, Check, ChevronRight, CreditCard, QrCode, Tag, Wallet, X } from 'lucide-react'
+import { ArrowLeft, Check, ChevronRight, CreditCard, MapPin, QrCode, Store, Tag, Wallet, X } from 'lucide-react'
 import { useCart, cartItemUnitPrice } from '../../context/CartContext'
 import { fmt } from '../../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { readMesaSession } from '../../lib/mesaSession'
 import {
+  bairroAtendido,
   buscarStatusPagamento,
   createPedido,
+  getAreaAtendimento,
+  getConfiguracaoRestaurante,
   validarCupom,
+  type AreaAtendimentoCidade,
+  type ConfiguracaoRestaurante,
   type CupomAplicado,
+  type EnderecoEntrega,
   type MetodoPagamento,
   type PedidoCriado,
+  type TipoEntrega,
 } from '../../services/storefront'
+import { buscarEnderecoPorCep } from '../../services/cep'
 import { getApiErrorMessage } from '../../services/apiClient'
 import '../../styles/ember-theme.css'
 import IconButton from '../../components/ember/IconButton'
 import Button from '../../components/ember/Button'
 import TextField from '../../components/ember/TextField'
+import SegmentedControl from '../../components/ember/SegmentedControl'
 
 declare global {
   interface Window {
@@ -39,7 +48,7 @@ function useMercadoPagoSDK() {
   return loaded
 }
 
-type Step = 'identificacao' | 'revisao' | 'pagamento' | 'pix' | 'cartao' | 'carteira'
+type Step = 'identificacao' | 'entrega' | 'revisao' | 'pagamento' | 'pix' | 'cartao' | 'carteira'
 
 function ProgressDots({ active }: { active: 0 | 1 }) {
   return (
@@ -121,6 +130,89 @@ export default function Checkout() {
   const [pedido, setPedido] = useState<PedidoCriado | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  const temMesa = !!readMesaSession()?.qrCodeToken
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>(
+    temMesa ? 'RETIRADA_BALCAO' : 'TAKE_AWAY',
+  )
+  const [configRestaurante, setConfigRestaurante] = useState<ConfiguracaoRestaurante | null>(null)
+  const [areaAtendimento, setAreaAtendimento] = useState<AreaAtendimentoCidade[]>([])
+  const [enderecoCep, setEnderecoCep] = useState('')
+  const [enderecoRua, setEnderecoRua] = useState('')
+  const [enderecoNumero, setEnderecoNumero] = useState('')
+  const [enderecoBairro, setEnderecoBairro] = useState('')
+  const [enderecoCidade, setEnderecoCidade] = useState('')
+  const [cepLoading, setCepLoading] = useState(false)
+  const [enderecoError, setEnderecoError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const session = readMesaSession()
+    if (!session) return
+    Promise.all([
+      getConfiguracaoRestaurante(session.tenantSlug),
+      getAreaAtendimento(session.tenantSlug),
+    ])
+      .then(([config, cidades]) => {
+        setConfigRestaurante(config)
+        setAreaAtendimento(cidades)
+      })
+      .catch(() => {
+        // se falhar, seguimos com os padrões (take away no fluxo sem mesa / balcão no fluxo com mesa)
+      })
+  }, [])
+
+  const coberturaOk =
+    tipoEntrega !== 'DELIVERY' || !enderecoCidade.trim() || !enderecoBairro.trim()
+      ? null
+      : bairroAtendido(areaAtendimento, enderecoCidade, enderecoBairro)
+
+  useEffect(() => {
+    const digits = enderecoCep.replace(/\D/g, '')
+    if (digits.length !== 8) return
+
+    let isMounted = true
+
+    async function buscarCep() {
+      setCepLoading(true)
+      setEnderecoError(null)
+      try {
+        const endereco = await buscarEnderecoPorCep(digits)
+        if (!isMounted) return
+        if (!endereco) { setEnderecoError('CEP não encontrado.'); return }
+        setEnderecoRua(endereco.rua)
+        setEnderecoBairro(endereco.bairro)
+        setEnderecoCidade(endereco.cidade)
+      } catch {
+        if (isMounted) setEnderecoError('Não foi possível buscar o CEP. Preencha o endereço manualmente.')
+      } finally {
+        if (isMounted) setCepLoading(false)
+      }
+    }
+
+    buscarCep()
+
+    return () => { isMounted = false }
+  }, [enderecoCep])
+
+  const enderecoCompleto =
+    enderecoCep.replace(/\D/g, '').length === 8 &&
+    !!enderecoRua.trim() &&
+    !!enderecoNumero.trim() &&
+    !!enderecoBairro.trim() &&
+    !!enderecoCidade.trim()
+
+  const entregaValida = tipoEntrega !== 'DELIVERY' || (enderecoCompleto && coberturaOk === true)
+
+  function buildEndereco(): EnderecoEntrega | undefined {
+    if (tipoEntrega !== 'DELIVERY') return undefined
+    return {
+      cep: enderecoCep,
+      rua: enderecoRua,
+      numero: enderecoNumero,
+      bairro: enderecoBairro,
+      cidade: enderecoCidade,
+    }
+  }
 
   const [codigoCupomInput, setCodigoCupomInput] = useState('')
   const [cupomAplicado, setCupomAplicado] = useState<CupomAplicado | null>(null)
@@ -228,6 +320,8 @@ export default function Checkout() {
     try {
       const created = await createPedido(session.tenantSlug, {
         mesaQrCodeToken: session.qrCodeToken,
+        tipoEntrega,
+        endereco: buildEndereco(),
         nomeCliente: nome.trim(),
         pagamento: { metodo: 'PIX' },
         itens: buildItens(),
@@ -292,6 +386,8 @@ export default function Checkout() {
 
       const criado = await createPedido(session.tenantSlug, {
         mesaQrCodeToken: session.qrCodeToken,
+        tipoEntrega,
+        endereco: buildEndereco(),
         nomeCliente: nome.trim(),
         pagamento: {
           metodo: metodoPagamento!,
@@ -377,7 +473,84 @@ export default function Checkout() {
           <div className="mt-6">
             <TextField id="checkout-nome" label="Seu nome" value={nome} onChange={event => setNome(event.target.value)} placeholder="Ex: Guilherme" />
           </div>
-          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim()} onClick={() => setStep('pagamento')}>
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim()} onClick={() => setStep('entrega')}>
+            Continuar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (step === 'entrega') {
+    const opcoes: Array<{ value: TipoEntrega; label: string }> = temMesa
+      ? [
+          { value: 'RETIRADA_BALCAO', label: 'Retirar no balcão' },
+          { value: 'TAKE_AWAY', label: 'Take away' },
+        ]
+      : [
+          ...(configRestaurante?.permiteTakeaway !== false ? [{ value: 'TAKE_AWAY' as const, label: 'Take away' }] : []),
+          ...(configRestaurante?.permiteDelivery ? [{ value: 'DELIVERY' as const, label: 'Entrega (delivery)' }] : []),
+        ]
+
+    return (
+      <div className="ember-theme min-h-screen">
+        <CheckoutHeader active={0} onClose={() => setStep('identificacao')} />
+        <div className="px-4 pb-24">
+          <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
+          <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como você quer receber?</h2>
+          <p className="mt-2" style={{ font: 'var(--text-body)', color: 'var(--text-secondary)' }}>
+            {temMesa ? 'Você está no estabelecimento — escolha como prefere retirar o pedido.' : 'Escolha como você quer receber o seu pedido.'}
+          </p>
+
+          <div className="mt-6">
+            <SegmentedControl
+              options={opcoes}
+              value={tipoEntrega}
+              onChange={value => setTipoEntrega(value as TipoEntrega)}
+            />
+          </div>
+
+          {tipoEntrega === 'DELIVERY' && (
+            <div className="mt-6 space-y-4">
+              <div className="flex items-center gap-2" style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>
+                <MapPin className="h-4 w-4" style={{ color: 'var(--accent)' }} />
+                Endereço de entrega
+              </div>
+              <TextField
+                id="endereco-cep"
+                label="CEP"
+                value={enderecoCep}
+                onChange={event => setEnderecoCep(event.target.value.replace(/\D/g, '').slice(0, 8))}
+                placeholder="00000000"
+                inputMode="numeric"
+              />
+              {cepLoading && (
+                <p style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>Buscando endereço...</p>
+              )}
+              <TextField id="endereco-rua" label="Rua / logradouro" value={enderecoRua} onChange={event => setEnderecoRua(event.target.value)} placeholder="Nome da rua" />
+              <div className="grid grid-cols-2 gap-3">
+                <TextField id="endereco-numero" label="Número" value={enderecoNumero} onChange={event => setEnderecoNumero(event.target.value)} placeholder="Ex: 100" />
+                <TextField id="endereco-bairro" label="Bairro" value={enderecoBairro} onChange={event => setEnderecoBairro(event.target.value)} placeholder="Bairro" />
+              </div>
+              <TextField id="endereco-cidade" label="Cidade" value={enderecoCidade} onChange={event => setEnderecoCidade(event.target.value)} placeholder="Cidade" />
+
+              {enderecoError && (
+                <p style={{ font: 'var(--text-caption)', color: 'var(--danger)' }}>{enderecoError}</p>
+              )}
+              {coberturaOk === false && (
+                <p style={{ font: 'var(--text-caption)', color: 'var(--danger)' }}>
+                  Não entregamos nesse bairro no momento.
+                </p>
+              )}
+              {coberturaOk === true && (
+                <p style={{ font: 'var(--text-caption)', color: 'var(--accent)' }}>
+                  Atendemos esse bairro. ✓
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!entregaValida} onClick={() => setStep('pagamento')}>
             Continuar
           </Button>
         </div>
@@ -401,7 +574,7 @@ export default function Checkout() {
 
     return (
       <div className="ember-theme min-h-screen">
-        <CheckoutHeader active={1} onClose={() => setStep('identificacao')} />
+        <CheckoutHeader active={1} onClose={() => setStep('entrega')} />
         <div className="px-4 pb-24">
           <ItemSummaryCard itemCount={itemCount} total={totalFinal} />
           <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Como você vai pagar?</h2>
@@ -466,6 +639,21 @@ export default function Checkout() {
         <CheckoutHeader active={1} onClose={() => setStep('pagamento')} />
         <div className="px-4 pb-24">
           <h2 className="mb-6" style={{ font: 'var(--text-h1)', color: 'var(--text-primary)' }}>Revisão do pedido</h2>
+
+          <GlassCard style={{ marginBottom: 'var(--sp-4)', display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-2)' }}>
+            {tipoEntrega === 'DELIVERY' ? <MapPin className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} /> : <Store className="h-4 w-4 mt-0.5 shrink-0" style={{ color: 'var(--accent)' }} />}
+            <div className="text-left">
+              <div style={{ font: 'var(--text-title)', color: 'var(--text-primary)' }}>
+                {tipoEntrega === 'RETIRADA_BALCAO' ? 'Retirar no balcão' : tipoEntrega === 'TAKE_AWAY' ? 'Take away' : 'Entrega (delivery)'}
+              </div>
+              {tipoEntrega === 'DELIVERY' && (
+                <div style={{ font: 'var(--text-caption)', color: 'var(--text-muted)' }}>
+                  {enderecoRua}, {enderecoNumero} — {enderecoBairro}, {enderecoCidade} — CEP {enderecoCep}
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
           <ul className="space-y-3">
             {items.map(it => (
               <li key={it.id}>
@@ -663,6 +851,8 @@ export default function Checkout() {
 
         const criado = await createPedido(session.tenantSlug, {
           mesaQrCodeToken: session.qrCodeToken,
+        tipoEntrega,
+        endereco: buildEndereco(),
           nomeCliente: nome.trim(),
           pagamento: {
             metodo: metodoPagamento!,

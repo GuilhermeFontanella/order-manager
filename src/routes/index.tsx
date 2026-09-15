@@ -3,6 +3,7 @@ import { ProtectedRoute, useAuth } from '../context/AuthContext'
 import Login from '../pages/login/Login'
 import OrderMenu from '../pages/order/OrderMenu'
 import MesaEntry from '../pages/order/MesaEntry'
+import TenantEntry from '../pages/order/TenantEntry'
 import ScanQR from '../pages/scan/ScanQR'
 import Checkout from '../pages/checkout/Checkout'
 import Kitchen from '../pages/kitchen/Kitchen'
@@ -23,6 +24,7 @@ import AparenciaSection from '../pages/admin/panel/sections/configuracoes/Aparen
 import PagamentoSection from '../pages/admin/panel/sections/configuracoes/PagamentoSection'
 import MesasConfigSection from '../pages/admin/panel/sections/configuracoes/MesasConfigSection'
 import CuponsSection from '../pages/admin/panel/sections/configuracoes/CuponsSection'
+import AreaAtendimentoSection from '../pages/admin/panel/sections/configuracoes/AreaAtendimentoSection'
 import ContaSection from '../pages/admin/panel/sections/configuracoes/ContaSection'
 import ChangePassword from '../pages/login/ChangePassword'
 import ResetPassword from '../pages/login/ResetPassword'
@@ -77,6 +79,7 @@ export function AppRoutes() {
         <Route path="/order" element={<OrderMenu />} />
 
         <Route path="/r/:tenantSlug/mesa/:qrCodeToken" element={<MesaEntry />} />
+        <Route path="/r/:tenantSlug" element={<TenantEntry />} />
 
         <Route path="/scan" element={<ScanQR />} />
 
@@ -150,6 +153,7 @@ export function AppRoutes() {
             <Route path="aparencia" element={<AparenciaSection />} />
             <Route path="pagamento" element={<PagamentoSection />} />
             <Route path="cupons" element={<CuponsSection />} />
+            <Route path="area-atendimento" element={<AreaAtendimentoSection />} />
             <Route path="mesas" element={<MesasConfigSection />} />
             <Route path="conta" element={<ContaSection />} />
           </Route>
