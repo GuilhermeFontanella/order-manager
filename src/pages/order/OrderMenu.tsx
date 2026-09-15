@@ -207,15 +207,21 @@ export default function OrderMenu() {
         <header className="pt-6 pb-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-center gap-3">
-              {appearance?.logoUrl && (
-                <img
-                  src={resolveMediaUrl(appearance.logoUrl)}
-                  alt="Logo"
-                  className="h-10 w-10 rounded-xl object-cover"
-                  style={{ boxShadow: "var(--ring-inner-strong)" }}
-                />
+              {loading ? (
+                <div className="skeleton h-8 w-40" />
+              ) : (
+                <>
+                  {appearance?.logoUrl && (
+                    <img
+                      src={resolveMediaUrl(appearance.logoUrl)}
+                      alt="Logo"
+                      className="h-10 w-10 rounded-xl object-cover"
+                      style={{ boxShadow: "var(--ring-inner-strong)" }}
+                    />
+                  )}
+                  <BrandMark name={appearance?.nome ?? "Botequim do Zé"} size="lg" />
+                </>
               )}
-              <BrandMark name={appearance?.nome ?? "Botequim do Zé"} size="lg" />
             </div>
 
             {mesa ? (
