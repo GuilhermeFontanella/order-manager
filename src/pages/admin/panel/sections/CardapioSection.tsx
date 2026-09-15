@@ -320,7 +320,7 @@ export default function CardapioSection() {
 
                 <div className="ap-item-cards">
                   {itensDaAba.map(produto => (
-                    <div key={produto.id} className="ap-item-card">
+                    <div key={produto.id} className={`ap-item-card${produto.disponivel ? '' : ' is-oculto'}`}>
                       <div className="ap-item-card-header">
                         <div>
                           <div className="ap-item-card-title">{produto.nome}</div>
@@ -355,12 +355,10 @@ export default function CardapioSection() {
                       </div>
 
                       <div className="ap-item-card-footer">
-                        {produto.disponivel ? (
-                          <span className="ap-ranked-value is-plain">Visível</span>
-                        ) : (
+                        {!produto.disponivel && (
                           <span className="ap-badge-low-stock" style={{ marginLeft: 0 }}>Oculto</span>
                         )}
-                        <span className="ap-table-sub">
+                        <span className="ap-table-sub" style={{ marginLeft: produto.disponivel ? 'auto' : undefined }}>
                           {[
                             produto.gruposOpcao.length > 0 && `${produto.gruposOpcao.length} grupo(s)`,
                             produto.insumos.length > 0 && `${produto.insumos.length} insumo(s)`,

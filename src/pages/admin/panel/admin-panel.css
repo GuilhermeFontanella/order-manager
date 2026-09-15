@@ -992,6 +992,14 @@
   border-radius: 14px;
   padding: 14px;
 }
+.ap-item-card.is-oculto {
+  background: var(--ap-red-tint);
+  border-color: transparent;
+}
+.ap-item-card.is-oculto .ap-item-card-title,
+.ap-item-card.is-oculto .ap-item-card-price {
+  opacity: 0.6;
+}
 .ap-item-card-header {
   display: flex;
   align-items: flex-start;
