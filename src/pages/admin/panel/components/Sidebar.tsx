@@ -6,8 +6,6 @@ import {
   Receipt,
   Users,
   Settings,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -36,14 +34,12 @@ export default function Sidebar({
   collapsed,
   mobileOpen,
   onNavigate,
-  onToggleCollapse,
 }: {
   brandName: string
   isMobile: boolean
   collapsed: boolean
   mobileOpen: boolean
   onNavigate: () => void
-  onToggleCollapse: () => void
 }) {
   const location = useLocation()
   const showLabels = isMobile || !collapsed

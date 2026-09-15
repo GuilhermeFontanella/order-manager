@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, TriangleAlert } from 'lucide-react'
+import { Check } from 'lucide-react'
 import ConfirmDialog from '../../../../../components/ConfirmDialog'
 import Snackbar from '../../components/Snackbar'
 import { getApiErrorMessage } from '../../../../../services/apiClient'
@@ -35,7 +35,7 @@ export default function ContaSection() {
   const [planoEmCheckout, setPlanoEmCheckout] = useState<string | null>(null)
   const [avisoCheckout, setAvisoCheckout] = useState<string | null>(null)
   const [pendingCancel, setPendingCancel] = useState(false)
-  const [cancelInfo, setCancelInfo] = useState(false)
+  const [, setCancelInfo] = useState(false)
   const [snackbar, setSnackbar] = useState<{ message: string; variant: 'success' | 'info' } | null>(null)
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
