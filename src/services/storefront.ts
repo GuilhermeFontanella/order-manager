@@ -9,7 +9,7 @@ export type Mesa = {
   ativa: boolean;
 };
 
-export type MetodoPagamento = "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO" | "GOOGLE_PAY" | "APPLE_PAY";
+export type MetodoPagamento = "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO" | "GOOGLE_PAY" | "APPLE_PAY" | "BALCAO";
 
 export type StatusPedido =
   "AGUARDANDO_PAGAMENTO" | "PREPARANDO" | "PRONTO" | "RETIRADO" | "CANCELADO";

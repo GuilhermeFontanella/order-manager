@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Modal from '../../../../components/Modal'
-import { TIPO_ENTREGA_LABEL, type Pedido, type StatusPedido } from '../../../../services/storefront'
+import { TIPO_ENTREGA_LABEL, type MetodoPagamento, type Pedido, type StatusPedido } from '../../../../services/storefront'
 import type { StatusPedidoManual } from '../../../../services/pedidosStaff'
 import { fmt } from '../../../../data/menu'
 
@@ -12,12 +12,13 @@ const STATUS_LABEL: Record<StatusPedido, string> = {
   CANCELADO: 'Cancelado',
 }
 
-const METODO_LABEL: Record<'PIX' | 'CARTAO_CREDITO' | 'CARTAO_DEBITO' | 'GOOGLE_PAY' | 'APPLE_PAY', string> = {
+const METODO_LABEL: Record<MetodoPagamento, string> = {
   PIX: 'Pix',
   CARTAO_CREDITO: 'Cartão de crédito',
   CARTAO_DEBITO: 'Cartão de débito',
   GOOGLE_PAY: 'Google Pay',
   APPLE_PAY: 'Apple Pay',
+  BALCAO: 'Pagar no balcão',
 }
 
 const STATUS_ALTERAVEIS: StatusPedido[] = ['AGUARDANDO_PAGAMENTO', 'PREPARANDO', 'PRONTO']

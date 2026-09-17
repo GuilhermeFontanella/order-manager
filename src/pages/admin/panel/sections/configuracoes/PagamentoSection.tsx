@@ -18,6 +18,7 @@ export default function PagamentoSection() {
     CARTAO_DEBITO: true,
     GOOGLE_PAY: true,
     APPLE_PAY: true,
+    BALCAO: true,
   })
 
   function toggle(metodo: MetodoPagamento) {
