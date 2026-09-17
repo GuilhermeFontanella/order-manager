@@ -23,6 +23,7 @@ type CartContextType = {
   add: (item: Item, qty?: number, obs?: string, selecoes?: SelecaoOpcao[]) => void
   remove: (id: string) => void
   updateQty: (id: string, qty: number) => void
+  update: (id: string, qty: number, obs?: string, selecoes?: SelecaoOpcao[]) => void
   clear: () => void
   acceptCookies: () => void
   declineCookies: () => void
@@ -128,6 +129,14 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     setItems(prev => prev.map(p => p.id === id ? { ...p, qty: Math.max(0, qty) } : p).filter(p => p.qty > 0))
   }
 
+  function update(id: string, qty: number, obs?: string, selecoes?: SelecaoOpcao[]) {
+    setItems(prev =>
+      prev
+        .map(p => p.id === id ? { ...p, qty: Math.max(0, qty), obs, selecoes } : p)
+        .filter(p => p.qty > 0),
+    )
+  }
+
   function clear() {
     setItems([])
     setShowRestoredNotice(false)
@@ -160,7 +169,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <CartContext.Provider value={{ items, consent, showRestoredNotice, add, remove, updateQty, clear, acceptCookies, declineCookies, dismissRestoredNotice }}>
+    <CartContext.Provider value={{ items, consent, showRestoredNotice, add, remove, updateQty, update, clear, acceptCookies, declineCookies, dismissRestoredNotice }}>
       {children}
     </CartContext.Provider>
   )

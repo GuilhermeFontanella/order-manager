@@ -14,24 +14,34 @@ type Props = {
   open: boolean
   onClose: () => void
   onAdd: (item: Item, qty: number, obs: string, selecoes: SelecaoOpcao[]) => void
+  initial?: { qty: number; obs: string; selecoes: SelecaoOpcao[] }
+}
+
+function selecoesParaGrupos(selecoes: SelecaoOpcao[]): Record<string, string[]> {
+  const resultado: Record<string, string[]> = {}
+  for (const s of selecoes) {
+    resultado[s.grupoId] = [...(resultado[s.grupoId] ?? []), s.opcaoId]
+  }
+  return resultado
 }
 
 function optionLabel(nome: string, precoAdicional: number) {
   return precoAdicional > 0 ? `${nome} (+${fmt(precoAdicional)})` : nome
 }
 
-export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
+export default function ItemSheet({ item, open, onClose, onAdd, initial }: Props) {
   const [qty, setQty] = useState(1)
   const [obs, setObs] = useState('')
   const [selecoesPorGrupo, setSelecoesPorGrupo] = useState<Record<string, string[]>>({})
 
   useEffect(() => {
-    if (item) {
-      setQty(1)
-      setObs('')
-      setSelecoesPorGrupo({})
+    if (open && item) {
+      setQty(initial?.qty ?? 1)
+      setObs(initial?.obs ?? '')
+      setSelecoesPorGrupo(initial ? selecoesParaGrupos(initial.selecoes) : {})
     }
-  }, [item?.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, item?.id])
 
   const grupos = item?.grupos ?? []
 
@@ -183,7 +193,7 @@ export default function ItemSheet({ item, open, onClose, onAdd }: Props) {
             onClose()
           }}
         >
-          {canAdd ? `Adicionar ao pedido · ${fmt(precoUnitario * qty)}` : 'Selecione as opções obrigatórias'}
+          {canAdd ? `${initial ? 'Salvar alterações' : 'Adicionar ao pedido'} · ${fmt(precoUnitario * qty)}` : 'Selecione as opções obrigatórias'}
         </Button>
       </motion.div>
     </div>
