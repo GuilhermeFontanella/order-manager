@@ -224,6 +224,7 @@ export default function Checkout() {
 
   const [copied, setCopied] = useState(false)
   const [numeroPedidoConfirmado, setNumeroPedidoConfirmado] = useState<number | null>(null)
+  const [numeroPedidoBalcao, setNumeroPedidoBalcao] = useState<number | null>(null)
   const pixCode = pedido?.pagamento?.pixQrCode ?? ''
   const pixQrBase64 = pedido?.pagamento?.pixQrCodeBase64 ?? ''
 
@@ -336,6 +337,31 @@ export default function Checkout() {
     }
   }
 
+  // Balcão: cria o pedido sem passar pelo gateway; cliente paga presencialmente ao retirar
+  async function handleConfirmPedidoBalcao() {
+    const session = readMesaSession()
+    if (!session) { setSubmitError('Sessão da mesa expirada. Escaneie o QR code novamente.'); return }
+
+    setSubmitError(null)
+    setSubmitting(true)
+    try {
+      const created = await createPedido(session.tenantSlug, {
+        mesaQrCodeToken: session.qrCodeToken,
+        tipoEntrega,
+        endereco: buildEndereco(),
+        nomeCliente: nome.trim(),
+        pagamento: { metodo: 'BALCAO' },
+        itens: buildItens(),
+        codigoCupom: cupomAplicado?.codigo,
+      })
+      setNumeroPedidoBalcao(created.numeroSequencial)
+    } catch {
+      setSubmitError('Não foi possível enviar o pedido. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   // Cartão: avança para o formulário sem criar pedido ainda
   function handleConfirmPedidoCartao() {
     setStep('cartao')
@@ -412,6 +438,43 @@ export default function Checkout() {
     } finally {
       setProcessingCard(false)
     }
+  }
+
+  if (numeroPedidoBalcao !== null) {
+    return (
+      <div className="ember-theme min-h-screen flex items-center justify-center p-4">
+        <div
+          className="rounded-2xl px-6 py-8 flex flex-col items-center text-center"
+          style={{ background: 'var(--surface-card)', boxShadow: 'var(--ring-inner)', backdropFilter: 'var(--blur-glass)', WebkitBackdropFilter: 'var(--blur-glass)', maxWidth: 360, width: '100%' }}
+        >
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-full mb-4"
+            style={{ background: 'var(--accent-soft)' }}
+          >
+            <Store className="h-8 w-8" style={{ color: 'var(--accent)' }} />
+          </div>
+          <h2 style={{ font: 'var(--text-h1)', color: 'var(--text-primary)', marginBottom: 'var(--sp-2)' }}>
+            Pedido registrado!
+          </h2>
+          <p style={{ font: 'var(--text-body)', color: 'var(--text-secondary)', marginBottom: 'var(--sp-2)' }}>
+            Apresente o número abaixo no balcão para pagar e retirar seu pedido.
+          </p>
+          <p style={{ font: 'var(--text-title)', color: 'var(--text-primary)', marginBottom: 'var(--sp-6)' }}>
+            Pedido nº <span style={{ color: 'var(--accent)' }}>#{numeroPedidoBalcao}</span>
+          </p>
+          <Button
+            fullWidth
+            size="lg"
+            onClick={() => {
+              clear()
+              navigate('/order')
+            }}
+          >
+            OK
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (numeroPedidoConfirmado !== null) {
@@ -570,6 +633,7 @@ export default function Checkout() {
       { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet, wallet: false },
       ...(supportsPaymentRequest ? [{ id: 'GOOGLE_PAY' as const, label: 'Google Pay', desc: 'Pague com sua carteira Google', icon: Wallet, wallet: true, logo: 'google' }] : []),
       ...(supportsApplePay ? [{ id: 'APPLE_PAY' as const, label: 'Apple Pay', desc: 'Pague com seu dispositivo Apple', icon: Wallet, wallet: true, logo: 'apple' }] : []),
+      { id: 'BALCAO' as const, label: 'Pagar no balcão', desc: 'Pague pessoalmente ao retirar seu pedido', icon: Store, wallet: false },
     ]
 
     return (
@@ -747,9 +811,11 @@ export default function Checkout() {
                 onClick={
                   metodoPagamento === 'PIX'
                     ? handleConfirmPedidoPix
-                    : (metodoPagamento === 'GOOGLE_PAY' || metodoPagamento === 'APPLE_PAY')
-                      ? handleConfirmPedidoCarteira
-                      : handleConfirmPedidoCartao
+                    : metodoPagamento === 'BALCAO'
+                      ? handleConfirmPedidoBalcao
+                      : (metodoPagamento === 'GOOGLE_PAY' || metodoPagamento === 'APPLE_PAY')
+                        ? handleConfirmPedidoCarteira
+                        : handleConfirmPedidoCartao
                 }
                 style={{ opacity: submitting ? 0.5 : 1, cursor: submitting ? 'not-allowed' : 'pointer' }}
               />

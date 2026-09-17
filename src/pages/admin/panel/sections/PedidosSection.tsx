@@ -24,6 +24,7 @@ const METODO_LABEL: Record<MetodoPagamento, string> = {
   CARTAO_DEBITO: 'Cartão de débito',
   GOOGLE_PAY: 'Google Pay',
   APPLE_PAY: 'Apple Pay',
+  BALCAO: 'Pagar no balcão',
 }
 
 const PAGE_SIZE = 10
