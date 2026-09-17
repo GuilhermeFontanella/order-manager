@@ -1,16 +1,24 @@
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { useCart, cartItemUnitPrice } from '../context/CartContext'
+import { useCart, cartItemUnitPrice, type CartItem } from '../context/CartContext'
 import { fmt } from '../data/menu'
 import { useNavigate } from 'react-router-dom'
 import { Pencil, Trash, WalletCards, X } from 'lucide-react';
 import QuantityStepper from './ember/QuantityStepper'
 import Button from './ember/Button'
 import IconButton from './ember/IconButton'
+import ItemSheet from './ItemSheet'
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { items, remove, updateQty } = useCart();
+  const { items, remove, updateQty, update } = useCart();
   const total = items.reduce((s, it) => s + cartItemUnitPrice(it) * it.qty, 0)
   const navigate = useNavigate()
+
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null)
+  const editInitial = useMemo(
+    () => editingItem ? { qty: editingItem.qty, obs: editingItem.obs ?? '', selecoes: editingItem.selecoes ?? [] } : undefined,
+    [editingItem],
+  )
 
   if (!open) return null
 
@@ -60,7 +68,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                 </div>
                 <div className="flex items-center gap-2">
                   <QuantityStepper value={it.qty} min={0} size={32} onChange={(qty) => updateQty(it.id, qty)} />
-                  <IconButton icon={Pencil} label="Editar item" size={32} variant="glass" onClick={() => remove(it.id)} />
+                  <IconButton icon={Pencil} label="Editar item" size={32} variant="glass" onClick={() => setEditingItem(it)} />
                   <IconButton icon={Trash} label="Remover item" size={32} variant="glass" style={{ color: 'var(--danger)' }} onClick={() => remove(it.id)} />
                 </div>
               </div>
@@ -85,6 +93,17 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
           </Button>
         </div>
       </motion.aside>
+
+      <ItemSheet
+        item={editingItem?.item ?? null}
+        open={!!editingItem}
+        initial={editInitial}
+        onClose={() => setEditingItem(null)}
+        onAdd={(_item, qty, obs, selecoes) => {
+          if (editingItem) update(editingItem.id, qty, obs, selecoes)
+          setEditingItem(null)
+        }}
+      />
     </div>
   )
 }
