@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
+const DEFAULT_MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
@@ -136,6 +136,7 @@ export default function Checkout() {
     temMesa ? 'RETIRADA_BALCAO' : 'TAKE_AWAY',
   )
   const [configRestaurante, setConfigRestaurante] = useState<ConfiguracaoRestaurante | null>(null)
+  const mpPublicKey = configRestaurante?.mercadoPagoPublicKey || DEFAULT_MP_PUBLIC_KEY
   const [areaAtendimento, setAreaAtendimento] = useState<AreaAtendimentoCidade[]>([])
   const [enderecoCep, setEnderecoCep] = useState('')
   const [enderecoRua, setEnderecoRua] = useState('')
@@ -393,7 +394,7 @@ export default function Checkout() {
     setProcessingCard(true)
 
     try {
-      const mp = new window.MercadoPago(MP_PUBLIC_KEY)
+      const mp = new window.MercadoPago(mpPublicKey)
       const [expirationMonth, expirationYear] = cardValidade.split('/')
 
       const token = await mp.createCardToken({
@@ -900,7 +901,7 @@ export default function Checkout() {
 
         const supportedMethods: PaymentMethodData[] = isApplePay
           ? [{ supportedMethods: 'https://apple.com/apple-pay', data: { version: 3, merchantIdentifier: APPLE_MERCHANT_ID, merchantCapabilities: ['supports3DS'], supportedNetworks: ['visa', 'masterCard', 'amex', 'elo'], countryCode: 'BR' } }]
-          : [{ supportedMethods: 'https://google.com/pay', data: { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [{ type: 'CARD', parameters: { allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'], allowedCardNetworks: ['MASTERCARD', 'VISA', 'ELO'] }, tokenizationSpecification: { type: 'PAYMENT_GATEWAY', parameters: { gateway: 'mercadopago', gatewayMerchantId: MP_PUBLIC_KEY } } }], merchantInfo: { merchantName: 'Restaurante' } } }]
+          : [{ supportedMethods: 'https://google.com/pay', data: { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: [{ type: 'CARD', parameters: { allowedAuthMethods: ['PAN_ONLY', 'CRYPTOGRAM_3DS'], allowedCardNetworks: ['MASTERCARD', 'VISA', 'ELO'] }, tokenizationSpecification: { type: 'PAYMENT_GATEWAY', parameters: { gateway: 'mercadopago', gatewayMerchantId: mpPublicKey } } }], merchantInfo: { merchantName: 'Restaurante' } } }]
 
         const details: PaymentDetailsInit = {
           total: { label: 'Total do pedido', amount: { currency: 'BRL', value: (totalFinal / 100).toFixed(2) } },

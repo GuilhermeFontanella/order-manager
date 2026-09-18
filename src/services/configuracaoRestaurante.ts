@@ -40,6 +40,8 @@ export type UpdateConfiguracaoRestauranteInput = Partial<{
   aceitaPix?: boolean;
   aceitaCartao?: boolean;
   aceitaBalcao?: boolean;
+  mercadoPagoAccessToken?: string;
+  mercadoPagoPublicKey?: string;
 }>;
 
 export async function updateConfiguracaoRestaurante(
