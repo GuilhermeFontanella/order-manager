@@ -196,6 +196,8 @@ export type ConfiguracaoRestaurante = {
   aceitaPix: boolean;
   aceitaCartao: boolean;
   aceitaBalcao: boolean;
+  mercadoPagoPublicKey: string | null;
+  mercadoPagoAccessTokenConfigured: boolean;
 };
 
 export async function getConfiguracaoRestaurante(

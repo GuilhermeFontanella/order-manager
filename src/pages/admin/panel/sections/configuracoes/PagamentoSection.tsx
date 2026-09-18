@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { QrCode, CreditCard, Store, Lock } from 'lucide-react'
+import { QrCode, CreditCard, Store } from 'lucide-react'
 import { useAuth } from '../../../../../context/AuthContext'
 import { getApiErrorMessage } from '../../../../../services/apiClient'
 import { getConfiguracaoRestaurante } from '../../../../../services/storefront'
@@ -33,6 +33,11 @@ export default function PagamentoSection() {
     aceitaBalcao: true,
   })
 
+  const [mercadoPagoPublicKey, setMercadoPagoPublicKey] = useState('')
+  const [accessTokenConfigured, setAccessTokenConfigured] = useState(false)
+  const [accessTokenInput, setAccessTokenInput] = useState('')
+  const [removeAccessToken, setRemoveAccessToken] = useState(false)
+
   useEffect(() => {
     if (!user?.tenant?.slug) return
     let isMounted = true
@@ -44,6 +49,8 @@ export default function PagamentoSection() {
           aceitaCartao: config.aceitaCartao,
           aceitaBalcao: config.aceitaBalcao,
         })
+        setMercadoPagoPublicKey(config.mercadoPagoPublicKey ?? '')
+        setAccessTokenConfigured(config.mercadoPagoAccessTokenConfigured)
       })
       .catch(() => {
         if (isMounted) setError('Não foi possível carregar as formas de pagamento.')
@@ -62,6 +69,11 @@ export default function PagamentoSection() {
     setAtivos(prev => ({ ...prev, [campo]: !prev[campo] }))
   }
 
+  function handleRemoverAccessToken() {
+    setRemoveAccessToken(true)
+    setAccessTokenInput('')
+  }
+
   async function handleSave() {
     if (nenhumAtivo) {
       setError('O estabelecimento precisa aceitar pelo menos um método de pagamento.')
@@ -70,7 +82,18 @@ export default function PagamentoSection() {
     setSaving(true)
     setError(null)
     try {
-      await updateConfiguracaoRestaurante(ativos)
+      await updateConfiguracaoRestaurante({
+        ...ativos,
+        mercadoPagoPublicKey,
+        ...(removeAccessToken
+          ? { mercadoPagoAccessToken: '' }
+          : accessTokenInput.trim() !== ''
+            ? { mercadoPagoAccessToken: accessTokenInput.trim() }
+            : {}),
+      })
+      setAccessTokenConfigured(removeAccessToken ? false : accessTokenInput.trim() !== '' ? true : accessTokenConfigured)
+      setAccessTokenInput('')
+      setRemoveAccessToken(false)
       trigger()
     } catch (err) {
       setError(getApiErrorMessage(err, 'Não foi possível salvar as formas de pagamento.'))
@@ -114,30 +137,51 @@ export default function PagamentoSection() {
         ))}
       </div>
 
-      <div className="ap-card ap-locked-card">
-        <div className="ap-group-header text-left">
-          <div>
-            <div className="ap-card-title">Integrações de pagamento</div>
-            <div className="ap-card-sub" style={{ marginBottom: 0 }}>
-              Conecte um gateway de pagamento para processar cobranças automaticamente.
-            </div>
-          </div>
-          <span className="ap-locked-badge">
-            <Lock size={11} />
-            Em breve
-          </span>
+      <div className="ap-card text-left">
+        <div className="ap-card-title">Integração Mercado Pago</div>
+        <div className="ap-card-sub">
+          Credenciais da conta do Mercado Pago do restaurante, usadas para processar os pagamentos com Pix e cartão do checkout. Se não configurar, os pagamentos usam a conta padrão do sistema.
         </div>
 
-        <div className="ap-locked-fields">
-          <div className="ap-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="ap-field">
-              <label className="ap-field-label">API key</label>
-              <input className="ap-input" placeholder="pk_live_..." disabled />
-            </div>
-            <div className="ap-field">
-              <label className="ap-field-label">Secret key</label>
-              <input className="ap-input" placeholder="sk_live_..." disabled />
-            </div>
+        <div className="ap-field mb-4">
+          <label className="ap-field-label" htmlFor="mp-public-key">Public key</label>
+          <input
+            id="mp-public-key"
+            className="ap-input"
+            value={mercadoPagoPublicKey}
+            onChange={event => setMercadoPagoPublicKey(event.target.value)}
+            placeholder="APP_USR-..."
+          />
+        </div>
+
+        <div className="ap-field">
+          <label className="ap-field-label" htmlFor="mp-access-token">Access token</label>
+          <input
+            id="mp-access-token"
+            className="ap-input"
+            type="password"
+            value={accessTokenInput}
+            onChange={event => { setAccessTokenInput(event.target.value); setRemoveAccessToken(false) }}
+            placeholder={accessTokenConfigured && !removeAccessToken ? '•••••••••••••••• (configurado — deixe em branco para manter)' : 'APP_USR-...'}
+          />
+          <div className="ap-toggle-sublabel" style={{ marginTop: 6 }}>
+            {removeAccessToken
+              ? 'A chave será removida ao salvar — os pagamentos passam a usar a conta padrão do sistema.'
+              : accessTokenConfigured
+                ? 'Já configurado. Fica criptografado e nunca é exibido de novo — digite um novo valor para substituir.'
+                : 'Nenhuma chave configurada — os pagamentos usam a conta padrão do sistema.'}
+            {accessTokenConfigured && !removeAccessToken && (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  onClick={handleRemoverAccessToken}
+                  style={{ color: 'var(--ap-red)', background: 'none', border: 'none', padding: 0, font: 'inherit', cursor: 'pointer' }}
+                >
+                  Remover chave
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
