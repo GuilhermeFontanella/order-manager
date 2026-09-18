@@ -11,6 +11,8 @@ export type Mesa = {
 
 export type MetodoPagamento = "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO" | "GOOGLE_PAY" | "APPLE_PAY" | "BALCAO";
 
+export type MetodoPagamentoAceito = "PIX" | "CARTAO" | "BALCAO";
+
 export type StatusPedido =
   "AGUARDANDO_PAGAMENTO" | "PREPARANDO" | "PRONTO" | "RETIRADO" | "CANCELADO";
 
@@ -191,6 +193,9 @@ export type ConfiguracaoRestaurante = {
   enderecoCidade: string | null;
   permiteTakeaway: boolean;
   permiteDelivery: boolean;
+  aceitaPix: boolean;
+  aceitaCartao: boolean;
+  aceitaBalcao: boolean;
 };
 
 export async function getConfiguracaoRestaurante(

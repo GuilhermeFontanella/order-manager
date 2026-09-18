@@ -37,6 +37,9 @@ export type UpdateConfiguracaoRestauranteInput = Partial<{
   enderecoCidade?: string;
   permiteTakeaway?: boolean;
   permiteDelivery?: boolean;
+  aceitaPix?: boolean;
+  aceitaCartao?: boolean;
+  aceitaBalcao?: boolean;
 }>;
 
 export async function updateConfiguracaoRestaurante(

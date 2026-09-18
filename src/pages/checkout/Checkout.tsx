@@ -409,6 +409,7 @@ export default function Checkout() {
       const bin = cardNumber.replace(/\s/g, '').slice(0, 6)
       const paymentMethods = await mp.getPaymentMethods({ bin })
       const paymentMethodId = paymentMethods?.results?.[0]?.id ?? 'visa'
+      const metodo = paymentMethods?.results?.[0]?.payment_type_id === 'debit_card' ? 'CARTAO_DEBITO' : 'CARTAO_CREDITO'
 
       const criado = await createPedido(session.tenantSlug, {
         mesaQrCodeToken: session.qrCodeToken,
@@ -416,7 +417,7 @@ export default function Checkout() {
         endereco: buildEndereco(),
         nomeCliente: nome.trim(),
         pagamento: {
-          metodo: metodoPagamento!,
+          metodo,
           cardToken: token.id,
           paymentMethodId,
           installments: 1,
@@ -626,14 +627,16 @@ export default function Checkout() {
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
     const supportsApplePay = supportsPaymentRequest && isIOS && isSafari
+    const aceitaPix = configRestaurante?.aceitaPix !== false
+    const aceitaCartao = configRestaurante?.aceitaCartao !== false
+    const aceitaBalcao = configRestaurante?.aceitaBalcao !== false
 
     const methods = [
-      { id: 'PIX' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode, wallet: false },
-      { id: 'CARTAO_CREDITO' as const, label: 'Cartão de crédito', desc: 'Visa, Mastercard, Elo', icon: CreditCard, wallet: false },
-      { id: 'CARTAO_DEBITO' as const, label: 'Cartão de débito', desc: 'Débito na hora', icon: Wallet, wallet: false },
-      ...(supportsPaymentRequest ? [{ id: 'GOOGLE_PAY' as const, label: 'Google Pay', desc: 'Pague com sua carteira Google', icon: Wallet, wallet: true, logo: 'google' }] : []),
-      ...(supportsApplePay ? [{ id: 'APPLE_PAY' as const, label: 'Apple Pay', desc: 'Pague com seu dispositivo Apple', icon: Wallet, wallet: true, logo: 'apple' }] : []),
-      { id: 'BALCAO' as const, label: 'Pagar no balcão', desc: 'Pague pessoalmente ao retirar seu pedido', icon: Store, wallet: false },
+      ...(aceitaPix ? [{ id: 'PIX' as const, label: 'Pix', desc: 'Aprovação na hora, via QR code', icon: QrCode, wallet: false }] : []),
+      ...(aceitaCartao ? [{ id: 'CARTAO_CREDITO' as const, label: 'Cartão', desc: 'Crédito ou débito, Visa, Mastercard, Elo', icon: CreditCard, wallet: false }] : []),
+      ...(aceitaCartao && supportsPaymentRequest ? [{ id: 'GOOGLE_PAY' as const, label: 'Google Pay', desc: 'Pague com sua carteira Google', icon: Wallet, wallet: true, logo: 'google' }] : []),
+      ...(aceitaCartao && supportsApplePay ? [{ id: 'APPLE_PAY' as const, label: 'Apple Pay', desc: 'Pague com seu dispositivo Apple', icon: Wallet, wallet: true, logo: 'apple' }] : []),
+      ...(aceitaBalcao ? [{ id: 'BALCAO' as const, label: 'Pagar no balcão', desc: 'Pague pessoalmente ao retirar seu pedido', icon: Store, wallet: false }] : []),
     ]
 
     return (
@@ -998,7 +1001,7 @@ export default function Checkout() {
   }
 
   // Cartão
-  const cardStepTitle = metodoPagamento === 'CARTAO_DEBITO' ? 'Cartão de débito' : 'Cartão de crédito'
+  const cardStepTitle = 'Cartão'
   return (
     <div className="ember-theme min-h-screen">
       <CheckoutHeader active={1} onClose={() => setStep('revisao')} />
