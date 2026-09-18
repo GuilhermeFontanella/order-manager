@@ -1,38 +1,102 @@
-import { useState } from 'react'
-import { QrCode, CreditCard, Landmark, Lock } from 'lucide-react'
-import SettingsSaveBar from '../../components/SettingsSaveBar'
+import { useEffect, useState } from 'react'
+import { QrCode, CreditCard, Store, Lock } from 'lucide-react'
+import { useAuth } from '../../../../../context/AuthContext'
+import { getApiErrorMessage } from '../../../../../services/apiClient'
+import { getConfiguracaoRestaurante } from '../../../../../services/storefront'
+import { updateConfiguracaoRestaurante } from '../../../../../services/configuracaoRestaurante'
 import { useSavedFlag } from '../../hooks/useSavedFlag'
-import type { MetodoPagamento } from '../../../../../services/storefront'
 
-const METODOS: Array<{ metodo: MetodoPagamento; label: string; sublabel: string; icon: typeof QrCode }> = [
-  { metodo: 'PIX', label: 'Pix', sublabel: 'Pagamento instantâneo via QR code ou copia e cola', icon: QrCode },
-  { metodo: 'CARTAO_CREDITO', label: 'Cartão de crédito', sublabel: 'Aceita bandeiras principais', icon: CreditCard },
-  { metodo: 'CARTAO_DEBITO', label: 'Cartão de débito', sublabel: 'Débito direto na conta do cliente', icon: Landmark },
+type MetodoAceito = 'aceitaPix' | 'aceitaCartao' | 'aceitaBalcao'
+
+const METODOS: Array<{ campo: MetodoAceito; label: string; sublabel: string; icon: typeof QrCode }> = [
+  { campo: 'aceitaPix', label: 'Pix', sublabel: 'Pagamento instantâneo via QR code ou copia e cola', icon: QrCode },
+  {
+    campo: 'aceitaCartao',
+    label: 'Cartão',
+    sublabel: 'Crédito e débito. Habilita também carteiras digitais como Google Pay',
+    icon: CreditCard,
+  },
+  { campo: 'aceitaBalcao', label: 'Pagar no balcão', sublabel: 'Cliente paga pessoalmente ao retirar o pedido', icon: Store },
 ]
 
 export default function PagamentoSection() {
+  const { user } = useAuth()
   const { saved, trigger } = useSavedFlag()
-  const [ativos, setAtivos] = useState<Record<MetodoPagamento, boolean>>({
-    PIX: true,
-    CARTAO_CREDITO: true,
-    CARTAO_DEBITO: true,
-    GOOGLE_PAY: true,
-    APPLE_PAY: true,
-    BALCAO: true,
+
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const [ativos, setAtivos] = useState<Record<MetodoAceito, boolean>>({
+    aceitaPix: true,
+    aceitaCartao: true,
+    aceitaBalcao: true,
   })
 
-  function toggle(metodo: MetodoPagamento) {
-    setAtivos(prev => ({ ...prev, [metodo]: !prev[metodo] }))
+  useEffect(() => {
+    if (!user?.tenant?.slug) return
+    let isMounted = true
+    getConfiguracaoRestaurante(user.tenant.slug)
+      .then(config => {
+        if (!isMounted) return
+        setAtivos({
+          aceitaPix: config.aceitaPix,
+          aceitaCartao: config.aceitaCartao,
+          aceitaBalcao: config.aceitaBalcao,
+        })
+      })
+      .catch(() => {
+        if (isMounted) setError('Não foi possível carregar as formas de pagamento.')
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false)
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [user?.tenant?.slug])
+
+  const nenhumAtivo = !ativos.aceitaPix && !ativos.aceitaCartao && !ativos.aceitaBalcao
+
+  function toggle(campo: MetodoAceito) {
+    setAtivos(prev => ({ ...prev, [campo]: !prev[campo] }))
+  }
+
+  async function handleSave() {
+    if (nenhumAtivo) {
+      setError('O estabelecimento precisa aceitar pelo menos um método de pagamento.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await updateConfiguracaoRestaurante(ativos)
+      trigger()
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Não foi possível salvar as formas de pagamento.'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) {
+    return <p className="ap-card-sub">Carregando formas de pagamento...</p>
   }
 
   return (
     <div className="ap-settings-stack">
+      {error && (
+        <p className="ap-card" style={{ marginBottom: 16, color: 'var(--ap-red)' }}>
+          {error}
+        </p>
+      )}
+
       <div className="ap-card text-left">
         <div className="ap-card-title">Formas de pagamento aceitas</div>
-        <div className="ap-card-sub">Controla o que o cliente pode escolher ao fechar o pedido no cardápio digital.</div>
+        <div className="ap-card-sub">Controla o que o cliente pode escolher ao fechar o pedido no cardápio digital. O estabelecimento precisa aceitar pelo menos uma forma de pagamento.</div>
 
-        {METODOS.map(({ metodo, label, sublabel, icon: Icon }) => (
-          <div key={metodo} className="ap-toggle-row">
+        {METODOS.map(({ campo, label, sublabel, icon: Icon }) => (
+          <div key={campo} className="ap-toggle-row">
             <div className="ap-toggle-info">
               <span className="ap-toggle-icon">
                 <Icon size={15} />
@@ -43,7 +107,7 @@ export default function PagamentoSection() {
               </div>
             </div>
             <label className="ap-switch">
-              <input type="checkbox" checked={ativos[metodo]} onChange={() => toggle(metodo)} />
+              <input type="checkbox" checked={ativos[campo]} onChange={() => toggle(campo)} />
               <span className="ap-switch-track" />
             </label>
           </div>
@@ -78,7 +142,14 @@ export default function PagamentoSection() {
         </div>
       </div>
 
-      <SettingsSaveBar onSave={trigger} saved={saved} />
+      <div className="ap-group-header" style={{ marginTop: 20 }}>
+        <span className="ap-card-sub" style={{ margin: 0 }}>
+          {saved ? 'Alterações salvas.' : 'As alterações são exibidas no checkout do cardápio digital.'}
+        </span>
+        <button type="button" className="ap-btn ap-btn-primary" onClick={handleSave} disabled={saving || nenhumAtivo}>
+          {saving ? 'Salvando...' : 'Salvar alterações'}
+        </button>
+      </div>
     </div>
   )
 }
