@@ -1488,3 +1488,17 @@
 .ap-manual-article blockquote { margin: 0 0 14px; padding: 8px 14px; border-left: 3px solid var(--ap-gold); background: var(--ap-gold-soft); border-radius: 0 8px 8px 0; }
 .ap-manual-article blockquote p { margin: 0; }
 .ap-manual-article code { font-family: var(--ap-font-mono); font-size: .9em; background: var(--ap-surface-alt); padding: 1px 6px; border-radius: 6px; }
+
+/* Rodapé da empresa */
+.ap-content-inner { min-height: 100%; display: flex; flex-direction: column; }
+.ap-content-body { flex: 1; min-width: 0; }
+.ap-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--ap-border-soft); display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--ap-ink-faint); text-align: left; }
+.ap-footer-brand { display: flex; align-items: center; gap: 12px; }
+.ap-footer-logo { width: 36px; height: 36px; border-radius: 9px; object-fit: contain; flex: none; }
+.ap-footer-logo-placeholder { display: grid; place-items: center; background: var(--ap-surface-alt); border: 1px dashed var(--ap-border); color: var(--ap-ink-soft); font-size: 12px; font-weight: 800; letter-spacing: .04em; }
+.ap-footer-title { font-weight: 700; color: var(--ap-ink-soft); }
+.ap-footer-line { margin-top: 1px; }
+.ap-footer-contact { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; }
+.ap-footer-contact a { color: inherit; text-decoration: none; }
+.ap-footer-contact a:hover { color: var(--ap-ink); text-decoration: underline; }
+.ap-footer-version { padding: 2px 8px; border-radius: 999px; background: var(--ap-surface-alt); border: 1px solid var(--ap-border-soft); font-family: var(--ap-font-mono); font-size: 11.5px; }

@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext'
 import { EmberThemeProvider, useEmberTheme } from '../../../context/EmberThemeContext'
 import ThemeToggle from '../../../components/ember/ThemeToggle'
 import Sidebar from './components/Sidebar'
+import CompanyFooter from './components/CompanyFooter'
 import { createAdminMuiTheme } from './muiTheme'
 import './admin-panel.css'
 
@@ -127,7 +128,12 @@ function AdminPanelShell() {
           </header>
 
           <main className="ap-content">
-            <Outlet />
+            <div className="ap-content-inner">
+              <div className="ap-content-body">
+                <Outlet />
+              </div>
+              <CompanyFooter />
+            </div>
           </main>
         </div>
       </div>
