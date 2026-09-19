@@ -219,7 +219,7 @@ export default function OrderMenu() {
                       style={{ boxShadow: "var(--ring-inner-strong)" }}
                     />
                   )}
-                  <BrandMark name={appearance?.nome ?? "Botequim do Zé"} size="lg" />
+                  <BrandMark name={appearance?.nome ?? "Restaurante"} size="lg" />
                 </>
               )}
             </div>

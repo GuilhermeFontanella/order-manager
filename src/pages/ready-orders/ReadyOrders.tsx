@@ -8,8 +8,10 @@ import {
 import { elapsedLabel } from '../../components/counter/utils'
 import StaffThemeShell from '../../components/ember/StaffThemeShell'
 import ThemeToggle from '../../components/ember/ThemeToggle'
+import { useAuth } from '../../context/AuthContext'
 
 export default function ReadyOrders() {
+  const { user } = useAuth()
   const [snapshot, setSnapshot] = useState<ReadyOrdersSnapshot>(() => readReadyOrdersSnapshot())
   const [now, setNow] = useState(Date.now())
   const [flash, setFlash] = useState(false)
@@ -50,7 +52,7 @@ export default function ReadyOrders() {
         <div className="ro-brand">
           <div className="ro-brand-mark">🍔</div>
           <div className="ro-brand-text">
-            <div className="ro-name">Botequim do Zé</div>
+            <div className="ro-name">{user?.tenant?.nome ?? 'Restaurante'}</div>
             <div className="ro-sub">Pedidos prontos para retirada</div>
           </div>
         </div>
