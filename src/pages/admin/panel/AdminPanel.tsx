@@ -17,6 +17,7 @@ const SECTION_TITLES: Record<string, string> = {
   estoque: 'Estoque',
   pedidos: 'Pedidos',
   equipe: 'Equipe',
+  manual: 'Manual',
   configuracoes: 'Configurações',
   'dados-restaurante': 'Dados do restaurante',
   aparencia: 'Aparência',
@@ -62,7 +63,9 @@ function AdminPanelShell() {
   // O próprio clique num item do menu já fecha o drawer via Sidebar's onNavigate — não
   // precisamos de um efeito escutando location.pathname pra isso.
   const currentSlug = location.pathname.split('/').filter(Boolean).pop() ?? ''
-  const sectionTitle = SECTION_TITLES[currentSlug] ?? 'Painel'
+  const sectionTitle = location.pathname.startsWith('/admin/manual')
+    ? 'Manual'
+    : SECTION_TITLES[currentSlug] ?? 'Painel'
   const brandName = user?.tenant?.nome ?? 'Painel'
   const firstName = user?.nome?.split(' ')[0] ?? ''
 
