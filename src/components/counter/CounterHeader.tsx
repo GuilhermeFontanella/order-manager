@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { LogOut, Menu, X } from 'lucide-react'
 import ThemeToggle from '../ember/ThemeToggle'
+import { useAuth } from '../../context/AuthContext'
 
 type Props = {
   clock: string
@@ -22,13 +23,14 @@ export default function CounterHeader({
   onLogout,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { user } = useAuth()
 
   return (
     <header className="counter-header">
       <div className="counter-header-left">
         <div className="counter-brand-mark">🖥️</div>
         <div className="counter-brand-text">
-          <div className="counter-name">Botequim do Zé</div>
+          <div className="counter-name">{user?.tenant?.nome ?? 'Restaurante'}</div>
           <div className="counter-sub">Painel do Balcão</div>
         </div>
       </div>

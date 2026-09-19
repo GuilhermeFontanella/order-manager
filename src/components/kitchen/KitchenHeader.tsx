@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { LogOut, Menu, X } from 'lucide-react'
 import ThemeToggle from '../ember/ThemeToggle'
+import { useAuth } from '../../context/AuthContext'
 
 const PAPEL_LABEL: Record<string, string> = {
   MANAGER: 'Manager',
@@ -24,6 +25,7 @@ export default function KitchenHeader({
   onLogout,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { user } = useAuth()
 
   return (
     <header className="kitchen-header">
@@ -31,7 +33,7 @@ export default function KitchenHeader({
         <div className="kitchen-header-left">
           <div className="kitchen-brand-mark">🍔</div>
           <div className="kitchen-brand-text">
-            <div className="kitchen-name">Botequim do Zé</div>
+            <div className="kitchen-name">{user?.tenant?.nome ?? 'Restaurante'}</div>
             <div className="kitchen-sub">Painel da Cozinha</div>
           </div>
         </div>
