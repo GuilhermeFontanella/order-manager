@@ -6,6 +6,7 @@ import {
   Receipt,
   Users,
   Settings,
+  BookOpen,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
   { to: '/admin/estoque', label: 'Estoque', icon: Package },
   { to: '/admin/pedidos', label: 'Pedidos', icon: Receipt },
   { to: '/admin/equipe', label: 'Equipe', icon: Users },
+  { to: '/admin/manual', label: 'Manual', icon: BookOpen },
   {
     to: '/admin/configuracoes',
     label: 'Configurações',

@@ -26,6 +26,8 @@ import MesasConfigSection from '../pages/admin/panel/sections/configuracoes/Mesa
 import CuponsSection from '../pages/admin/panel/sections/configuracoes/CuponsSection'
 import AreaAtendimentoSection from '../pages/admin/panel/sections/configuracoes/AreaAtendimentoSection'
 import ContaSection from '../pages/admin/panel/sections/configuracoes/ContaSection'
+import ManualSection from '../pages/admin/panel/sections/ManualSection'
+import ManualTopicSection from '../pages/admin/panel/sections/ManualTopicSection'
 import ChangePassword from '../pages/login/ChangePassword'
 import ResetPassword from '../pages/login/ResetPassword'
 
@@ -147,6 +149,8 @@ export function AppRoutes() {
           <Route path="estoque" element={<EstoqueSection />} />
           <Route path="pedidos" element={<PedidosSection />} />
           <Route path="equipe" element={<EquipeSection />} />
+          <Route path="manual" element={<ManualSection />} />
+          <Route path="manual/:slug" element={<ManualTopicSection />} />
           <Route path="configuracoes">
             <Route index element={<Navigate to="dados-restaurante" replace />} />
             <Route path="dados-restaurante" element={<DadosRestauranteSection />} />
