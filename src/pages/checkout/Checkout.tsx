@@ -434,8 +434,11 @@ export default function Checkout() {
       }
     } catch (err) {
       console.error('Erro ao processar pagamento com cartão:', err)
-      const mpMessage = (err as { message?: string; cause?: Array<{ description?: string }> })?.cause?.[0]?.description
-        ?? (err as Error)?.message
+      // O erro pode vir do SDK do Mercado Pago (tokenização, com `cause`) ou da nossa
+      // API (cobrança recusada, credencial inválida) — nesse caso o motivo está no
+      // corpo da resposta, não em err.message ("Request failed with status code 400").
+      const mpMessage = (err as { cause?: Array<{ description?: string }> })?.cause?.[0]?.description
+        ?? getApiErrorMessage(err, '')
       setCardError(mpMessage ? `Erro ao processar o cartão: ${mpMessage}` : 'Erro ao processar o cartão. Verifique os dados e tente novamente.')
     } finally {
       setProcessingCard(false)
@@ -946,7 +949,7 @@ export default function Checkout() {
         if ((err as Error)?.name === 'AbortError') {
           setWalletError(null)
         } else {
-          setWalletError(`Erro ao processar ${walletLabel}. Tente outro método de pagamento.`)
+          setWalletError(getApiErrorMessage(err, `Erro ao processar ${walletLabel}. Tente outro método de pagamento.`))
         }
       } finally {
         setWalletProcessing(false)
