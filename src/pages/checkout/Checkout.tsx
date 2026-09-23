@@ -34,7 +34,8 @@ declare global {
   }
 }
 
-const DEFAULT_MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
+const DEFAULT_MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? ''
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
@@ -126,6 +127,7 @@ export default function Checkout() {
 
   const [step, setStep] = useState<Step>('identificacao')
   const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
   const [metodoPagamento, setMetodoPagamento] = useState<MetodoPagamento | null>(null)
   const [pedido, setPedido] = useState<PedidoCriado | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -137,6 +139,10 @@ export default function Checkout() {
   )
   const [configRestaurante, setConfigRestaurante] = useState<ConfiguracaoRestaurante | null>(null)
   const mpPublicKey = configRestaurante?.mercadoPagoPublicKey || DEFAULT_MP_PUBLIC_KEY
+  const emailValido = !email.trim() || EMAIL_PATTERN.test(email.trim())
+  // Vai como payer.email na cobrança do Mercado Pago. Quando vazio, o backend usa
+  // um endereço genérico — o pagamento funciona, mas sem comprovante para o cliente.
+  const emailCliente = email.trim() || undefined
   const [areaAtendimento, setAreaAtendimento] = useState<AreaAtendimentoCidade[]>([])
   const [enderecoCep, setEnderecoCep] = useState('')
   const [enderecoRua, setEnderecoRua] = useState('')
@@ -325,6 +331,7 @@ export default function Checkout() {
         tipoEntrega,
         endereco: buildEndereco(),
         nomeCliente: nome.trim(),
+        emailCliente,
         pagamento: { metodo: 'PIX' },
         itens: buildItens(),
         codigoCupom: cupomAplicado?.codigo,
@@ -351,6 +358,7 @@ export default function Checkout() {
         tipoEntrega,
         endereco: buildEndereco(),
         nomeCliente: nome.trim(),
+        emailCliente,
         pagamento: { metodo: 'BALCAO' },
         itens: buildItens(),
         codigoCupom: cupomAplicado?.codigo,
@@ -390,6 +398,11 @@ export default function Checkout() {
     const session = readMesaSession()
     if (!session) { setCardError('Sessão da mesa expirada.'); return }
 
+    if (!mpPublicKey) {
+      setCardError('Pagamento com cartão indisponível: o restaurante não tem a public key do Mercado Pago configurada.')
+      return
+    }
+
     setCardError(null)
     setProcessingCard(true)
 
@@ -417,6 +430,7 @@ export default function Checkout() {
         tipoEntrega,
         endereco: buildEndereco(),
         nomeCliente: nome.trim(),
+        emailCliente,
         pagamento: {
           metodo,
           cardToken: token.id,
@@ -541,7 +555,24 @@ export default function Checkout() {
           <div className="mt-6">
             <TextField id="checkout-nome" label="Seu nome" value={nome} onChange={event => setNome(event.target.value)} placeholder="Ex: Guilherme" />
           </div>
-          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim()} onClick={() => setStep('entrega')}>
+          <div className="mt-4">
+            <TextField
+              id="checkout-email"
+              label="E-mail (opcional)"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              value={email}
+              onChange={event => setEmail(event.target.value)}
+              placeholder="Ex: guilherme@email.com"
+            />
+            <p className="mt-2" style={{ font: 'var(--text-caption)', color: emailValido ? 'var(--text-muted)' : 'var(--danger)' }}>
+              {emailValido
+                ? 'O Mercado Pago envia o comprovante do pagamento para esse endereço.'
+                : 'E-mail inválido. Confira antes de continuar.'}
+            </p>
+          </div>
+          <Button fullWidth size="lg" style={{ marginTop: 'var(--sp-6)' }} disabled={!nome.trim() || !emailValido} onClick={() => setStep('entrega')}>
             Continuar
           </Button>
         </div>
@@ -927,6 +958,7 @@ export default function Checkout() {
         tipoEntrega,
         endereco: buildEndereco(),
           nomeCliente: nome.trim(),
+          emailCliente,
           pagamento: {
             metodo: metodoPagamento!,
             cardToken: token,
