@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-const DEFAULT_MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? 'APP_USR-8b45d0d3-8145-4f04-a26d-fee45dd7642e'
+const DEFAULT_MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY ?? ''
 
 function useMercadoPagoSDK() {
   const [loaded, setLoaded] = useState(false)
@@ -389,6 +389,11 @@ export default function Checkout() {
     if (!mpLoaded) return
     const session = readMesaSession()
     if (!session) { setCardError('Sessão da mesa expirada.'); return }
+
+    if (!mpPublicKey) {
+      setCardError('Pagamento com cartão indisponível: o restaurante não tem a public key do Mercado Pago configurada.')
+      return
+    }
 
     setCardError(null)
     setProcessingCard(true)
